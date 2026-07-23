@@ -270,15 +270,23 @@ function bestDx(f,s,x0,y0){
     }
     if(clip<bestClip){bestClip=clip;best=dx;if(!clip)break}
   }
-  return best;
+  return [best,bestClip];
+}
+/* ligne centrée + nudge ; si une ligne appariée clippe encore,
+   on resserre le séparateur de groupe (2 px → 1 px) */
+function layoutLine(g,f,s,y,b){
+  let text=s, x0=Math.round((SIZE-textW(f,s))/2), fit=bestDx(f,s,x0,y);
+  if(fit[1]>0 && s.includes(" ")){
+    const alt=s.replace(/ /g,""), ax0=Math.round((SIZE-textW(f,alt))/2);
+    const afit=bestDx(f,alt,ax0,y);
+    if(afit[1]<fit[1]){text=alt;x0=ax0;fit=afit;}
+  }
+  drawText(g,f,text,x0+fit[0],y,b);
 }
 function linesLayout(g,rows,f,b,gap=1){
   const H=rows.length*f.h+(rows.length-1)*gap;
   const y0=Math.round((SIZE-H)/2);
-  rows.forEach((s,k)=>{
-    const y=y0+k*(f.h+gap), x0=Math.round((SIZE-textW(f,s))/2);
-    drawText(g,f,s,x0+bestDx(f,s,x0,y),y,b);
-  });
+  rows.forEach((s,k)=>layoutLine(g,f,s,y0+k*(f.h+gap),b));
 }
 function renderContent(g,fmt,d,t){
   const u=units(d);
