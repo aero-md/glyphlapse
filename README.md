@@ -10,9 +10,18 @@ temps écoulé **depuis** une date de référence, ou restant **jusqu'à** elle
 format d'affichage, secondes en anneau ou sablier), appui long sur le
 Glyph Button pour changer de format.
 
-Préview de référence : [glyph-lapse-preview.html](glyph-lapse-preview.html)
-(mêmes polices, mêmes règles, même sablier que le toy).
+**[▶ Préview interactive](https://aero-md.github.io/glyphlapse/)** — le
+prototype web ([glyph-lapse-preview.html](glyph-lapse-preview.html)) jouable
+dans le navigateur : mêmes polices, mêmes règles, même sablier que le toy.
+
 Specs : [SPECS.md](SPECS.md) · plan : [PLAN.md](PLAN.md).
+
+| Détail + anneau | Sablier | Arrivée J-0 |
+|:---:|:---:|:---:|
+| ![Détail, anneau des secondes](preview/glyphlapse-detail.svg) | ![Sablier qui se remplit](preview/glyphlapse-sablier.svg) | ![Compte à rebours et arrivée](preview/glyphlapse-arrivee.svg) |
+
+*Animations SVG générées depuis le moteur réel
+([`preview/`](preview/)) — mêmes constantes, mêmes easings que le toy.*
 
 ## Formats
 

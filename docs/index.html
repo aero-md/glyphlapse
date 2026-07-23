@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GlyphLapse — préview interactive</title>
+<style>body { margin: 0; background: #0B0B0D; }</style>
+</head>
+<body>
+<script>
+/* Charge glyph-lapse-preview.html depuis la branche main (source unique de
+   vérité) et le réécrit dans le document — son <script> inline s'exécute alors
+   normalement (document.write exécute les scripts). */
+(async () => {
+  const SRC = "https://raw.githubusercontent.com/aero-md/glyphlapse/main/glyph-lapse-preview.html";
+  const html = await (await fetch(SRC)).text();
+  document.open();
+  document.write(html);
+  document.close();
+})().catch((e) => {
+  document.body.innerHTML =
+    '<p style="color:#E4E4E1;font-family:monospace;padding:24px">Erreur de chargement : ' + e + "</p>";
+});
+</script>
+</body>
+</html>
