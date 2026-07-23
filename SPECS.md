@@ -41,6 +41,10 @@ Sélectionnés dans l'app, cyclés par appui long sur le Glyph Button :
 1. **Détail** *(défaut)* — granularité complète : une ligne par unité
    pertinente (valeur + lettre), jusqu'à 5 lignes. Police 5×7 si ≤ 2 lignes,
    3×5 si 3-4, **3×4** si 5 lignes (années → minutes toutes visibles).
+   *Variante à l'essai* **Détail 2** : même granularité mais 2 unités par
+   ligne quand nécessaire — `[A]` / `[M J]` / `[H ′]` (calendrier au centre,
+   horloge en bas, séparateur 2 px) — police 3×5 partout, jamais de 3×4.
+   Une des deux variantes sera retenue après essai sur la préview.
 2. **Compact** — les 2 unités les plus significatives, police 5×7.
 3. **Cycle** — une unité à la fois plein écran (valeur 5×7, lettre en dessous),
    slide horizontal toutes les `CYCLE_PERIOD`.

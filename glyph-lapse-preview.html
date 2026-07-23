@@ -102,14 +102,16 @@
       <h2>Format d'affichage</h2>
       <div class="row" id="formats">
         <button data-f="0" class="on">Détail</button>
-        <button data-f="1">Compact</button>
-        <button data-f="2">Cycle</button>
-        <button data-f="3">Jours</button>
+        <button data-f="1">Détail 2</button>
+        <button data-f="2">Compact</button>
+        <button data-f="3">Cycle</button>
+        <button data-f="4">Jours</button>
       </div>
       <p class="hint">Détail : granularité complète — une ligne par unité pertinente,
-      jusqu'à 5 (années → minutes). Police 5×7 à ≤ 2 lignes, 3×5 à 3-4, resserrée
-      en 3×4 à 5 lignes. Minutes notées ′. Les secondes vivent sur l'anneau
-      (sauf diff &lt; 1 min).</p>
+      jusqu'à 5 (années → minutes), police 3×4 à 5 lignes. <b>Détail 2</b> :
+      même granularité mais 2 unités par ligne quand nécessaire — années /
+      mois·jours / heures·minutes — police 3×5 partout. Minutes notées ′.
+      Les secondes vivent sur l'anneau (sauf diff &lt; 1 min).</p>
     </div>
 
     <div class="card">
@@ -192,10 +194,12 @@ const F4={h:4,g:{
  "'":["1","1","0","0"]
 }};
 function chW(f,c){return f.g[c]?f.g[c][0].length:0}
-function textW(f,s){let w=0;for(const c of s)w+=chW(f,c)+1;return w-1}
+/* " " = séparateur de groupe : 2 px de blanc entre deux unités d'une même ligne */
+function textW(f,s){let w=0;for(const c of s)w+=c===" "?1:chW(f,c)+1;return w-1}
 function drawText(g,f,s,x0,y0,b){
   let x=x0;
   for(const c of s){
+    if(c===" "){x+=1;continue}
     const gl=f.g[c]; if(!gl){x+=4;continue}
     for(let r=0;r<f.h;r++)for(let k=0;k<gl[r].length;k++)
       if(gl[r][k]==="1") set(g,x+k,y0+r,b);
@@ -245,6 +249,7 @@ function bestDx(f,s,x0,y0){
   for(const dx of [0,-1,1,-2,2,-3,3]){
     let clip=0,x=x0+dx;
     for(const c of s){
+      if(c===" "){x+=1;continue}
       const gl=f.g[c]; if(!gl){x+=4;continue}
       for(let r=0;r<f.h;r++)for(let k=0;k<gl[r].length;k++)
         if(gl[r][k]==="1"){const X=x+k,Y=y0+r;
@@ -272,9 +277,16 @@ function renderContent(g,fmt,d,t){
     if(u.length<=2)      linesLayout(g,u.map(x=>x[3]+x[1]),F5,1);
     else if(u.length<=4) linesLayout(g,u.map(x=>x[3]+x[0]),F3,1);
     else                 linesLayout(g,u.map(x=>x[3]+x[0]),F4,1);
-  }else if(fmt===1){ /* Compact */
+  }else if(fmt===1){ /* Détail 2 — appariement : 2 unités par ligne si besoin, 3×5 partout */
+    const s=x=>x[3]+x[0];
+    let rows;
+    if(u.length===5)      rows=[s(u[0]), s(u[1])+" "+s(u[2]), s(u[3])+" "+s(u[4])];
+    else if(u.length===4) rows=[s(u[0]), s(u[1])+" "+s(u[2]), s(u[3])];
+    else                  rows=u.map(s);
+    linesLayout(g,rows,u.length<=2?F5:F3,1);
+  }else if(fmt===2){ /* Compact */
     linesLayout(g,u.slice(0,2).map(x=>x[3]+x[1]),F5,1);
-  }else if(fmt===2){ /* Cycle */
+  }else if(fmt===3){ /* Cycle */
     const per=2.0, n=u.length, tt=t%(per*n);
     const idx=Math.floor(tt/per), ph=tt-idx*per;
     const sl=Math.min(1,ph/0.3), e=1-Math.pow(1-sl,3);
@@ -348,7 +360,7 @@ function paint(g){
 }
 
 const roDir=document.getElementById("ro-dir"), roTxt=document.getElementById("ro-txt");
-const FMT_NAMES=["Détail","Compact","Cycle","Jours"];
+const FMT_NAMES=["Détail","Détail 2","Compact","Cycle","Jours"];
 const UNIT_FR=[["an","ans"],["mois","mois"],["jour","jours"],["h","h"],["min","min"]];
 function updateReadout(d){
   roDir.textContent=(d.dir==="since"?"Depuis":"Jusqu'au")+" · "+FMT_NAMES[format];
@@ -417,7 +429,7 @@ document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click"
 }));
 document.querySelectorAll("#formats button").forEach(b=>
   b.addEventListener("click",()=>setFormat(+b.dataset.f)));
-document.getElementById("longpress").addEventListener("click",()=>setFormat((format+1)%4));
+document.getElementById("longpress").addEventListener("click",()=>setFormat((format+1)%5));
 
 /* ---------- titre en dot-matrix ---------- */
 (function(){
