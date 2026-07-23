@@ -71,7 +71,8 @@ Tous les formats conservent l'anneau des secondes.
   ajustée par dichotomie pour que le nombre de cellules de sable reste
   `s/60 × 489` — le cône ne fausse pas la lecture du temps.
 - **Texture** : surface irrégulière (dithering déterministe ~55 %), corps
-  avec bruit granulaire figé (10-15 %), quelques grains posés sur le talus.
+  avec bruit granulaire figé (10-15 %). Aucun pixel détaché au-dessus de la
+  surface (effet « grains volants » écarté à l'essai).
 - Luminosités : sable 10-16 %, filet central ~7 % — bien en dessous de la
   traînée d'anneau (35 %), le texte (100 %) reste lisible par-dessus.
 - Filet de sable vertical au centre en depuis, avec éclaboussure au point

@@ -350,8 +350,6 @@ function renderHourglass(g,d,t){
       /* surface irrégulière, corps avec bruit granulaire figé */
       const b=depth<1 ? (hash2(x,y)<0.55?0.16:0.09) : 0.10+0.05*hash2(x,y);
       g[i]=Math.max(g[i],b);
-    }else if(depth>-1.6 && hash2(x*7+1,y*3+5)<0.08){
-      g[i]=Math.max(g[i],0.12); /* grains posés sur le talus */
     }
   }
   if(d.dir==="since"){
