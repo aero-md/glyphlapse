@@ -353,12 +353,18 @@ function renderHourglass(g,d,t){
     }
   }
   if(d.dir==="since"){
-    const yPk=Math.max(0,Math.floor(yB));
-    if(yPk>2){
-      /* filet de sable central, grain animé + éclaboussure au point d'impact */
-      for(let y=0;y<yPk-1;y++) set(g,CX,y,0.07);
-      set(g,CX,Math.floor((t*16)%(yPk-1)),0.2);
-      set(g,CX+(Math.floor(t*5)%2?1:-1),yPk-1,0.15);
+    const topC=Math.ceil(yB); /* premier pixel de sable au centre (sommet du cône) */
+    if(topC>2){
+      /* filet continu jusqu'au sommet (il le touche), grain brillant qui descend
+         + creux sombre en opposition de phase : paquets de sable dans le filet */
+      for(let y=0;y<topC;y++) set(g,CX,y,0.07);
+      const gy=Math.floor((t*16)%topC);
+      set(g,CX,gy,0.2);
+      const j=Math.floor((gy+topC/2)%topC)*SIZE+CX;
+      if(g[j]<=0.08) g[j]=0.02;
+      /* éclaboussure posée sur la surface du talus, alternance gauche/droite */
+      const sx=CX+(Math.floor(t*5)%2?1:-1);
+      set(g,sx,Math.ceil(yB+SLOPE)-1,0.15);
     }
   }
 }
