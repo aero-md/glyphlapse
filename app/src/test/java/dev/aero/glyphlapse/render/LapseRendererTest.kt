@@ -86,8 +86,9 @@ class LapseRendererTest {
             val d = diff(ms(2026, 7, 23, 12, 0, 0), ms(2026, 7, 23, 12, 3, seconds))
             val g = FloatArray(625)
             renderer.renderHourglass(g, d, t = 5.0)
-            // le filet central (x=12, faible luminosité) ne compte pas comme sable
-            return g.withIndex().count { (i, b) -> b >= 0.09f && i % 25 != 12 }
+            // le filet central (x=12) est exclu ; le sable de fond assombri
+            // descend jusqu'à ~0.055, seuil abaissé en conséquence
+            return g.withIndex().count { (i, b) -> b >= 0.05f && i % 25 != 12 }
         }
         val c10 = sandCount(10)
         val c30 = sandCount(30)
