@@ -139,9 +139,11 @@ l'interface de configuration.
 ## Icône
 
 `glyphlapse-icon.svg` : sablier pixel-art (sprite 13×17 centré) sur la matrice
-circulaire, même pipeline et mêmes 3 niveaux que la cerise de GlyphSlot —
-LEDs éteintes (0,12), sable atténué (0,55), cadre/verre plein (1,0), halo sur
-les LEDs allumées, fond adaptive icon sombre. Chambre haute pleine qui draine
-par l'entonnoir, grain dans le col, monticule qui se forme en bas.
-`toy_preview.xml` (drawable Android) = même sprite sans halo ni fond, pour la
-liste des Glyph Toys.
+circulaire. **Structure 1:1 avec `glyphslot-icon.svg`** — mêmes defs (bordure
+adaptive icon, plaque circulaire, dégradés), même géométrie de LED (11,5 px
+arrondies, positions identiques) et mêmes 4 groupes : LEDs éteintes
+(#FFFFFF 0,05), sable atténué (#B9B9B4 0,55), halo unique sous glow
+(#FFFFFF 0,55, `stdDeviation` 5, pas de double merge → bloom maîtrisé), cadre
+allumé (#F8F8F4). Chambre haute pleine qui draine par l'entonnoir, grain dans
+le col, monticule en bas. `toy_preview.xml` (drawable Android) = même sprite
+en LEDs carrées sans halo ni fond, pour la liste des Glyph Toys.
