@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icone du launcher — concept « Sweep » : fond blanc, anneau des secondes
+     (rayon 200, strokeWidth 64) + aiguille noire inclinee vers ~2h
+     (strokeWidth 64, sans contour). Moyeu rouge (rayon 44) avec contour blanc
+     de 26 px. Distincte de toy_preview (vignette de la matrice). Viewport 512. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- fond blanc, coins arrondis facon tuile Nothing -->
+    <path
+        android:pathData="M112,0 L400,0 A112,112 0 0 1 512,112 L512,400 A112,112 0 0 1 400,512 L112,512 A112,112 0 0 1 0,400 L0,112 A112,112 0 0 1 112,0 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- anneau des secondes : ouverture de 70 deg en haut -->
+    <path
+        android:pathData="M370.72,92.17 A200,200 0 1 1 141.28,92.17"
+        android:fillColor="#00000000"
+        android:strokeColor="#0A0A0A"
+        android:strokeWidth="64"
+        android:strokeLineCap="round" />
+
+    <!-- aiguille noire, inclinee, contenue dans le cadran -->
+    <path
+        android:pathData="M256,256 L410.15,167.00"
+        android:fillColor="#00000000"
+        android:strokeColor="#0A0A0A"
+        android:strokeWidth="64"
+        android:strokeLineCap="round" />
+
+    <!-- moyeu : contour blanc (26 px) -->
+    <path
+        android:pathData="M186,256 A70,70 0 1 1 326,256 A70,70 0 1 1 186,256 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- moyeu : disque rouge (rouge de marque Nothing) -->
+    <path
+        android:pathData="M212,256 A44,44 0 1 1 300,256 A44,44 0 1 1 212,256 Z"
+        android:fillColor="#D71921" />
+</vector>
