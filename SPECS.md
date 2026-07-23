@@ -138,5 +138,10 @@ l'interface de configuration.
 
 ## Icône
 
-`glyphlapse-icon.svg` : sablier pixel-art sur la matrice circulaire (grains
-en cours de chute, halo sur LEDs allumées), fond adaptive icon sombre.
+`glyphlapse-icon.svg` : sablier pixel-art (sprite 13×17 centré) sur la matrice
+circulaire, même pipeline et mêmes 3 niveaux que la cerise de GlyphSlot —
+LEDs éteintes (0,12), sable atténué (0,55), cadre/verre plein (1,0), halo sur
+les LEDs allumées, fond adaptive icon sombre. Chambre haute pleine qui draine
+par l'entonnoir, grain dans le col, monticule qui se forme en bas.
+`toy_preview.xml` (drawable Android) = même sprite sans halo ni fond, pour la
+liste des Glyph Toys.
