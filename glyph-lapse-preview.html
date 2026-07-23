@@ -106,9 +106,10 @@
         <button data-f="2">Cycle</button>
         <button data-f="3">Jours</button>
       </div>
-      <p class="hint">Détail : une ligne par unité pertinente (max 4), police 3×5 —
-      grossit en 5×7 s'il y a ≤ 2 lignes. Les secondes vivent sur l'anneau, jamais
-      en ligne (sauf diff &lt; 1 min).</p>
+      <p class="hint">Détail : granularité complète — une ligne par unité pertinente,
+      jusqu'à 5 (années → minutes). Police 5×7 à ≤ 2 lignes, 3×5 à 3-4, resserrée
+      en 3×4 à 5 lignes. Minutes notées ′. Les secondes vivent sur l'anneau
+      (sauf diff &lt; 1 min).</p>
     </div>
 
     <div class="card">
@@ -123,7 +124,7 @@
 <footer>
   Décomposition calendaire réelle (années/mois exacts, fins de mois clampées,
   bissextiles) — miroir de <code>java.time</code> côté Kotlin. Unités : A · M · J ·
-  H · MIN, secondes sur l'anneau. Voir <code>SPECS.md</code> du repo GlyphLapse.
+  H · ′ (minutes), secondes sur l'anneau. Voir <code>SPECS.md</code> du repo GlyphLapse.
 </footer>
 
 <script>
@@ -155,6 +156,7 @@ const F3={h:5,g:{
  "M":["10001","11011","10101","10001","10001"],
  "N":["1001","1101","1011","1001","1001"],
  "-":["000","000","111","000","000"],"+":["000","010","111","010","000"],
+ "'":["1","1","0","0","0"],
  "G":["011","100","101","101","011"],"L":["100","100","100","100","111"],
  "Y":["101","101","010","010","010"],"P":["111","101","111","100","100"],
  "E":["111","100","110","100","111"]
@@ -175,7 +177,19 @@ const F5={h:7,g:{
  "H":["10001","10001","10001","11111","10001","10001","10001"],
  "M":["10001","11011","10101","10101","10001","10001","10001"],
  "S":["01111","10000","10000","01110","00001","00001","11110"],
- "-":["000","000","000","111","000","000","000"]
+ "-":["000","000","000","111","000","000","000"],
+ "'":["1","1","1","0","0","0","0"]
+}};
+/* 3×4 ultra-compacte : uniquement pour le format Détail à 5 lignes */
+const F4={h:4,g:{
+ "0":["111","101","101","111"],"1":["110","010","010","111"],
+ "2":["111","001","010","111"],"3":["111","011","001","111"],
+ "4":["101","111","001","001"],"5":["111","110","001","111"],
+ "6":["100","111","101","111"],"7":["111","001","010","010"],
+ "8":["111","111","101","111"],"9":["111","101","111","001"],
+ "A":["010","101","111","101"],"J":["001","001","101","111"],
+ "H":["101","111","101","101"],"M":["10001","11011","10101","10001"],
+ "'":["1","1","0","0"]
 }};
 function chW(f,c){return f.g[c]?f.g[c][0].length:0}
 function textW(f,s){let w=0;for(const c of s)w+=chW(f,c)+1;return w-1}
@@ -216,41 +230,59 @@ function breakdown(refMs,nowMs){
   return {dir,years,months,days,hours,minutes,seconds,
           totalDays:Math.floor((b-a0)/86400000)};
 }
-/* unités pertinentes, hors secondes : [étiquette3, étiquette1, valeur] */
+/* unités pertinentes, hors secondes : [inline, étiquette 5×7, étiquette cycle, valeur] */
 function units(d){
-  const all=[["A","A",d.years],["M","M",d.months],["J","J",d.days],
-             ["H","H",d.hours],["MIN","M",d.minutes]];
-  let i=0; while(i<all.length-1 && all[i][2]===0) i++;
+  const all=[["A","A","A",d.years],["M","M","M",d.months],["J","J","J",d.days],
+             ["H","H","H",d.hours],["'","'","MIN",d.minutes]];
+  let i=0; while(i<all.length-1 && all[i][3]===0) i++;
   return all.slice(i);
 }
 
 /* ---------- rendu des formats ---------- */
-function linesLayout(g,rows,f,b){
-  const H=rows.length*f.h+(rows.length-1);
+/* nudge horizontal : minimise les pixels clippés par le disque (bandes haut/bas) */
+function bestDx(f,s,x0,y0){
+  let best=0,bestClip=1e9;
+  for(const dx of [0,-1,1,-2,2,-3,3]){
+    let clip=0,x=x0+dx;
+    for(const c of s){
+      const gl=f.g[c]; if(!gl){x+=4;continue}
+      for(let r=0;r<f.h;r++)for(let k=0;k<gl[r].length;k++)
+        if(gl[r][k]==="1"){const X=x+k,Y=y0+r;
+          if(X<0||X>=SIZE||Y<0||Y>=SIZE||dist[Y*SIZE+X]>=R)clip++;}
+      x+=gl[0].length+1;
+    }
+    if(clip<bestClip){bestClip=clip;best=dx;if(!clip)break}
+  }
+  return best;
+}
+function linesLayout(g,rows,f,b,gap=1){
+  const H=rows.length*f.h+(rows.length-1)*gap;
   const y0=Math.round((SIZE-H)/2);
-  rows.forEach((s,k)=>drawText(g,f,s,Math.round((SIZE-textW(f,s))/2),y0+k*(f.h+1),b));
+  rows.forEach((s,k)=>{
+    const y=y0+k*(f.h+gap), x0=Math.round((SIZE-textW(f,s))/2);
+    drawText(g,f,s,x0+bestDx(f,s,x0,y),y,b);
+  });
 }
 function renderContent(g,fmt,d,t){
   const u=units(d);
   if(d.years===0&&d.months===0&&d.days===0&&d.hours===0&&d.minutes===0){
     drawCentered(g,F5,d.seconds+"S",12,1); return;
   }
-  if(fmt===0){ /* Détail — MIN saute dès qu'il y aurait 4 lignes (clipping bas de disque) */
-    let keep=u.slice(0,4);
-    if(keep.length===4) keep=keep.filter(x=>x[0]!=="MIN");
-    if(keep.length<=2) linesLayout(g,keep.map(x=>x[2]+x[1]),F5,1);
-    else               linesLayout(g,keep.map(x=>x[2]+x[0]),F3,1);
+  if(fmt===0){ /* Détail — granularité complète, police selon le nombre de lignes */
+    if(u.length<=2)      linesLayout(g,u.map(x=>x[3]+x[1]),F5,1);
+    else if(u.length<=4) linesLayout(g,u.map(x=>x[3]+x[0]),F3,1);
+    else                 linesLayout(g,u.map(x=>x[3]+x[0]),F4,1);
   }else if(fmt===1){ /* Compact */
-    linesLayout(g,u.slice(0,2).map(x=>x[2]+x[1]),F5,1);
+    linesLayout(g,u.slice(0,2).map(x=>x[3]+x[1]),F5,1);
   }else if(fmt===2){ /* Cycle */
     const per=2.0, n=u.length, tt=t%(per*n);
     const idx=Math.floor(tt/per), ph=tt-idx*per;
     const sl=Math.min(1,ph/0.3), e=1-Math.pow(1-sl,3);
     const cur=u[idx], prev=u[(idx+n-1)%n];
     const page=(unit,dx)=>{
-      const s=String(unit[2]);
+      const s=String(unit[3]);
       drawText(g,F5,s,Math.round((SIZE-textW(F5,s))/2)+dx,4,1);
-      drawText(g,F3,unit[0],Math.round((SIZE-textW(F3,unit[0]))/2)+dx,15,0.55);
+      drawText(g,F3,unit[2],Math.round((SIZE-textW(F3,unit[2]))/2)+dx,15,0.55);
     };
     if(sl<1&&n>1) page(prev,Math.round(-e*SIZE));
     page(cur,n>1?Math.round((1-e)*SIZE):0);
@@ -301,17 +333,17 @@ const cvs=document.getElementById("matrix"), ctx=cvs.getContext("2d");
 const CELL=cvs.width/SIZE;
 function paint(g){
   ctx.clearRect(0,0,cvs.width,cvs.height);
+  const pad=CELL*0.14, side=CELL-2*pad;
   for(const i of inside){
     const x=i%SIZE, y=(i-x)/SIZE, b=g[i];
-    ctx.beginPath();
-    ctx.arc((x+0.5)*CELL,(y+0.5)*CELL,CELL*0.32,0,7);
     if(b<=0.02){ ctx.fillStyle="#1B1B20"; ctx.shadowBlur=0; }
     else{
       ctx.fillStyle=`rgba(242,242,239,${0.25+0.75*b})`;
       ctx.shadowColor=`rgba(242,242,239,${0.8*b})`;
       ctx.shadowBlur=CELL*0.55*b;
     }
-    ctx.fill(); ctx.shadowBlur=0;
+    ctx.fillRect(x*CELL+pad, y*CELL+pad, side, side);
+    ctx.shadowBlur=0;
   }
 }
 
@@ -398,12 +430,12 @@ document.getElementById("longpress").addEventListener("click",()=>setFormat((for
     const gl=F3.g[ch];
     for(let r=0;r<5;r++)for(let k=0;k<gl[r].length;k++)if(gl[r][k]==="1"){
       x.fillStyle="#F2F2EF";
-      x.beginPath();x.arc((cx+k)*(dot+2)+dot,r*(dot+2)+dot+2,dot*0.62,0,7);x.fill();
+      x.fillRect((cx+k)*(dot+2),r*(dot+2)+2,dot,dot);
     }
     cx+=gl[0].length+1;
   }
   x.fillStyle="#D71921";
-  x.beginPath();x.arc(cx*(dot+2)+dot,4*(dot+2)+dot+2,dot*0.62,0,7);x.fill();
+  x.fillRect(cx*(dot+2),4*(dot+2)+2,dot,dot);
 })();
 
 setRef(new Date(new Date().getFullYear(),0,1).getTime());

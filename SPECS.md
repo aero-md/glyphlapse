@@ -10,8 +10,8 @@ automatiquement : référence passée → depuis, future → jusqu'à.
 |-----|-------:|-------------|
 | `SIZE` | 25 | Matrice 25×25 |
 | `RADIUS` | 12,5 | Masque circulaire centré (12,12) — ~489 LEDs |
-| `LINE_H` | 5 + 1 | Police 3×5 : 5 px + 1 px d'interligne |
-| `MAX_LINES` | 4 | Lignes max au centre (4×5 + 3 = 23 px) |
+| `FONTS` | 5×7 / 3×5 / 3×4 | Police selon le nombre de lignes (≤2 / 3-4 / 5) |
+| `MAX_LINES` | 5 | Lignes max au centre (5×4 + 4 interlignes = 24 px) |
 | `RING_BAND` | 11,3–12,5 | Cellules de l'anneau des secondes (bord du disque) |
 | `TICK` | 1 Hz | Rendu au repos, aligné sur la seconde |
 | FPS anim | 30 | Pendant transitions et animation d'arrivée |
@@ -23,12 +23,14 @@ automatiquement : référence passée → depuis, future → jusqu'à.
 
 - Calcul via `java.time` (`ZonedDateTime`, `Period` + `Duration`), fuseau local :
   années/mois exacts (bissextiles, fins de mois), puis jours/heures/minutes/secondes.
-- Unités : `A` (années), `M` (mois), `J` (jours), `H` (heures), `MIN` (minutes),
-  secondes portées par **l'anneau périphérique** (pas de ligne dédiée).
+- Unités : `A` (années), `M` (mois), `J` (jours), `H` (heures), `′` (minutes,
+  notation prime — étroit, passe dans les bandes basses du disque), secondes
+  portées par **l'anneau périphérique** (pas de ligne dédiée).
 - **Pertinence** : les unités de tête à zéro sont masquées (diff de 5 jours →
-  pas de « 0A 0M », on commence à `J`). `MIN` saute dès qu'il y aurait
-  4 lignes (la ligne « 59MIN » serait clippée par le bas du disque) —
-  4 lignes = toujours `A M J H`.
+  pas de « 0A 0M », on commence à `J`). En dessous de la première unité non
+  nulle, **granularité complète** : jusqu'à 5 lignes (`A M J H ′`).
+- **Centrage disc-aware** : chaque ligne est centrée puis nudgée de ±1-3 px
+  si des pixels sortiraient du disque (bandes haut/bas plus étroites).
 - Diff < 1 min : la valeur des secondes s'affiche au centre (5×7), l'anneau
   continue en parallèle.
 
@@ -36,9 +38,9 @@ automatiquement : référence passée → depuis, future → jusqu'à.
 
 Sélectionnés dans l'app, cyclés par appui long sur le Glyph Button :
 
-1. **Détail** *(défaut)* — une ligne par unité pertinente (valeur + lettre,
-   police 3×5), lignes centrées verticalement et horizontalement.
-   Si ≤ 2 lignes : police 5×7 (plus lisible de loin).
+1. **Détail** *(défaut)* — granularité complète : une ligne par unité
+   pertinente (valeur + lettre), jusqu'à 5 lignes. Police 5×7 si ≤ 2 lignes,
+   3×5 si 3-4, **3×4** si 5 lignes (années → minutes toutes visibles).
 2. **Compact** — les 2 unités les plus significatives, police 5×7.
 3. **Cycle** — une unité à la fois plein écran (valeur 5×7, lettre en dessous),
    slide horizontal toutes les `CYCLE_PERIOD`.
