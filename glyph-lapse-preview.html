@@ -322,22 +322,46 @@ function renderRing(g,d){
     g[ring[idx].i]=Math.max(g[ring[idx].i], j===k-1?1:0.32);
   }
 }
-/* sablier : sable en fond (~12 %), niveau = fraction de la minute écoulée/restante */
+/* sablier : sable en fond (~12 %), niveau = fraction de la minute écoulée/restante.
+   Surface en cône (talus) : pointe au centre en depuis, entonnoir en jusqu'à.
+   La hauteur de base est ajustée par dichotomie pour conserver la quantité de sable. */
+function hash2(x,y){
+  let h=(x*374761393+y*668265263)|0;
+  h=(h^(h>>13))*1274126177; h=h^(h>>16);
+  return ((h>>>0)%1000)/1000;
+}
+const SLOPE=0.45;
 function renderHourglass(g,d,t){
-  const rows=Math.round(d.seconds/60*SIZE);
-  if(rows<=0) return;
-  const yTop=SIZE-rows;
-  for(const i of inside){
-    const x=i%SIZE, y=(i-x)/SIZE;
-    let yt=yTop;
-    /* monticule central (le sable tombe dessus) ou creux (il s'écoule par le bas) */
-    if(Math.abs(x-CX)<=1) yt+=d.dir==="since"?-1:1;
-    if(y>=yt) g[i]=Math.max(g[i], y===yt?0.16:0.12);
+  const target=Math.round(d.seconds/60*inside.length);
+  if(target<=0) return;
+  const prof=d.dir==="since" ? dx=>SLOPE*dx : dx=>SLOPE*(12-dx);
+  let lo=-14, hi=SIZE+14;
+  for(let it=0;it<14;it++){
+    const mid=(lo+hi)/2; let cnt=0;
+    for(const i of inside){const x=i%SIZE,y=(i-x)/SIZE;
+      if(y>=mid+prof(Math.abs(x-CX)))cnt++;}
+    if(cnt>target)lo=mid; else hi=mid;
   }
-  if(d.dir==="since"&&yTop>2){
-    /* filet de sable qui tombe au centre, grain animé */
-    for(let y=0;y<yTop-1;y++) set(g,CX,y,0.07);
-    set(g,CX,Math.floor((t*16)%(yTop-1)),0.2);
+  const yB=(lo+hi)/2;
+  for(const i of inside){
+    const x=i%SIZE, y=(i-x)/SIZE, thr=yB+prof(Math.abs(x-CX));
+    const depth=y-thr;
+    if(depth>=0){
+      /* surface irrégulière, corps avec bruit granulaire figé */
+      const b=depth<1 ? (hash2(x,y)<0.55?0.16:0.09) : 0.10+0.05*hash2(x,y);
+      g[i]=Math.max(g[i],b);
+    }else if(depth>-1.6 && hash2(x*7+1,y*3+5)<0.08){
+      g[i]=Math.max(g[i],0.12); /* grains posés sur le talus */
+    }
+  }
+  if(d.dir==="since"){
+    const yPk=Math.max(0,Math.floor(yB));
+    if(yPk>2){
+      /* filet de sable central, grain animé + éclaboussure au point d'impact */
+      for(let y=0;y<yPk-1;y++) set(g,CX,y,0.07);
+      set(g,CX,Math.floor((t*16)%(yPk-1)),0.2);
+      set(g,CX+(Math.floor(t*5)%2?1:-1),yPk-1,0.15);
+    }
   }
 }
 function renderSeconds(g,d,t){

@@ -65,13 +65,17 @@ Tous les formats conservent l'anneau des secondes.
 - Le disque est la moitié **basse** d'un sablier qui se remplit (depuis) ou
   la moitié **haute** qui se vide (jusqu'à) ; niveau = `s/60` du diamètre,
   quantifié à la ligne, mis à jour à la seconde.
-- Luminosités : sable ~12 %, ligne de surface ~16 %, filet central ~7 % —
-  bien en dessous de la traînée d'anneau (35 %), le texte (100 %) reste
-  lisible par-dessus.
-- Détail de forme : monticule central (+1 ligne) en depuis — le sable tombe
-  dessus — creux central (−1 ligne) en jusqu'à — il s'écoule par le bas.
-  Filet de sable vertical au centre en depuis (grain animé : préview
-  uniquement, le toy reste à 1 Hz).
+- **Surface en cône** (angle de talus `SLOPE` = 0,45 ligne/colonne) :
+  pointe au centre en depuis (le sable s'empile sous le filet), entonnoir
+  en jusqu'à (il s'écoule par le trou central). La hauteur de base est
+  ajustée par dichotomie pour que le nombre de cellules de sable reste
+  `s/60 × 489` — le cône ne fausse pas la lecture du temps.
+- **Texture** : surface irrégulière (dithering déterministe ~55 %), corps
+  avec bruit granulaire figé (10-15 %), quelques grains posés sur le talus.
+- Luminosités : sable 10-16 %, filet central ~7 % — bien en dessous de la
+  traînée d'anneau (35 %), le texte (100 %) reste lisible par-dessus.
+- Filet de sable vertical au centre en depuis, avec éclaboussure au point
+  d'impact (grain animé : préview uniquement, le toy reste à 1 Hz).
 
 Les deux modes sont masqués en AOD (rendu statique, cf. Interaction).
 
