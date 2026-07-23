@@ -356,7 +356,7 @@ function renderHourglass(g,d,t){
     const depth=y-thr;
     if(depth>=0){
       /* surface irrégulière, corps avec bruit granulaire figé */
-      const b=depth<1 ? (hash2(x,y)<0.55?0.16:0.09) : 0.10+0.05*hash2(x,y);
+      const b=depth<1 ? (hash2(x,y)<0.55?0.10:0.055) : 0.06+0.03*hash2(x,y);
       g[i]=Math.max(g[i],b);
     }
   }
