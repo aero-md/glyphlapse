@@ -115,6 +115,18 @@
     </div>
 
     <div class="card">
+      <h2>Secondes — minute en cours</h2>
+      <div class="row" id="secmodes">
+        <button data-s="0" class="on">Anneau</button>
+        <button data-s="1">Sablier</button>
+      </div>
+      <p class="hint">Anneau : arc périphérique, horaire (depuis) ou anti-horaire
+      (jusqu'à). Sablier : le disque devient la moitié <b>basse</b> d'un sablier
+      qui se remplit (depuis) ou la moitié <b>haute</b> qui se vide (jusqu'à) —
+      sable en arrière-plan à ~12 % de luminosité, le texte reste lisible par-dessus.</p>
+    </div>
+
+    <div class="card">
       <h2>Glyph Button</h2>
       <button class="glyphbtn" id="longpress"><span class="dot"></span>Appui long — format suivant</button>
       <p class="hint">Sur l'appareil : appui long sur le bouton tactile au dos.
@@ -310,6 +322,27 @@ function renderRing(g,d){
     g[ring[idx].i]=Math.max(g[ring[idx].i], j===k-1?1:0.32);
   }
 }
+/* sablier : sable en fond (~12 %), niveau = fraction de la minute écoulée/restante */
+function renderHourglass(g,d,t){
+  const rows=Math.round(d.seconds/60*SIZE);
+  if(rows<=0) return;
+  const yTop=SIZE-rows;
+  for(const i of inside){
+    const x=i%SIZE, y=(i-x)/SIZE;
+    let yt=yTop;
+    /* monticule central (le sable tombe dessus) ou creux (il s'écoule par le bas) */
+    if(Math.abs(x-CX)<=1) yt+=d.dir==="since"?-1:1;
+    if(y>=yt) g[i]=Math.max(g[i], y===yt?0.16:0.12);
+  }
+  if(d.dir==="since"&&yTop>2){
+    /* filet de sable qui tombe au centre, grain animé */
+    for(let y=0;y<yTop-1;y++) set(g,CX,y,0.07);
+    set(g,CX,Math.floor((t*16)%(yTop-1)),0.2);
+  }
+}
+function renderSeconds(g,d,t){
+  if(secMode===1) renderHourglass(g,d,t); else renderRing(g,d);
+}
 function renderArrival(g,t){
   let f=Math.max(Math.exp(-6*t), t>0.25?0.9*Math.exp(-6*(t-0.25)):0)*1.1;
   if(f>0.04) for(const i of inside) g[i]=Math.max(g[i],Math.min(1,f));
@@ -324,14 +357,15 @@ function renderArrival(g,t){
 
 /* ---------- état & boucle ---------- */
 const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
-let refMs, format=0, lastDir=null, arrival=null;
+let refMs, format=0, secMode=0, lastDir=null, arrival=null;
 let slide=null; /* {from:Float32Array, start} */
 const t0=performance.now()/1000;
 
 function snapshot(){
   const g=new Float32Array(SIZE*SIZE), now=Date.now(), d=breakdown(refMs,now);
-  renderContent(g,format,d,performance.now()/1000-t0);
-  renderRing(g,d); return g;
+  const t=performance.now()/1000;
+  renderContent(g,format,d,t-t0);
+  renderSeconds(g,d,t); return g;
 }
 function setFormat(f){
   if(f===format)return;
@@ -379,7 +413,7 @@ function frame(){
 
   let g=new Float32Array(SIZE*SIZE);
   renderContent(g,format,d,tNow-t0);
-  renderRing(g,d);
+  renderSeconds(g,d,tNow);
 
   if(slide){ /* slide horizontal ancien → nouveau format */
     const u=Math.min(1,(tNow-slide.start)/0.3), e=1-Math.pow(1-u,3);
@@ -429,6 +463,12 @@ document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click"
 }));
 document.querySelectorAll("#formats button").forEach(b=>
   b.addEventListener("click",()=>setFormat(+b.dataset.f)));
+document.querySelectorAll("#secmodes button").forEach(b=>
+  b.addEventListener("click",()=>{
+    secMode=+b.dataset.s;
+    document.querySelectorAll("#secmodes button").forEach(x=>
+      x.classList.toggle("on",+x.dataset.s===secMode));
+  }));
 document.getElementById("longpress").addEventListener("click",()=>setFormat((format+1)%5));
 
 /* ---------- titre en dot-matrix ---------- */

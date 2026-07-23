@@ -53,13 +53,27 @@ Sélectionnés dans l'app, cyclés par appui long sur le Glyph Button :
 
 Tous les formats conservent l'anneau des secondes.
 
-## Anneau des secondes
+## Secondes — minute en cours (réglage : anneau ou sablier)
 
+**Anneau** *(défaut)* :
 - Cellules du bord (distance ∈ `RING_BAND`) triées par angle depuis 12 h.
 - Arc allumé proportionnel à `s/60` : tête à 100 %, traînée dégradée (~35 %).
 - Sens **horaire** en mode depuis (le temps s'accumule), **anti-horaire**
   en mode jusqu'à (le temps s'épuise).
-- Masqué en AOD (rendu statique, cf. Interaction).
+
+**Sablier** (alternative, en arrière-plan du texte) :
+- Le disque est la moitié **basse** d'un sablier qui se remplit (depuis) ou
+  la moitié **haute** qui se vide (jusqu'à) ; niveau = `s/60` du diamètre,
+  quantifié à la ligne, mis à jour à la seconde.
+- Luminosités : sable ~12 %, ligne de surface ~16 %, filet central ~7 % —
+  bien en dessous de la traînée d'anneau (35 %), le texte (100 %) reste
+  lisible par-dessus.
+- Détail de forme : monticule central (+1 ligne) en depuis — le sable tombe
+  dessus — creux central (−1 ligne) en jusqu'à — il s'écoule par le bas.
+  Filet de sable vertical au centre en depuis (grain animé : préview
+  uniquement, le toy reste à 1 Hz).
+
+Les deux modes sont masqués en AOD (rendu statique, cf. Interaction).
 
 ## Machine à états
 
