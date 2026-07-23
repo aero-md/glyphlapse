@@ -30,7 +30,9 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > release.jks
+          # Tolere le base64 brut comme le format certutil/PEM (en-tetes ----- + CRLF)
+          echo "$KEYSTORE_BASE64" | sed '/-----/d' | tr -d '[:space:]' | base64 -d > release.jks
+          test -s release.jks || { echo "Keystore vide : KEYSTORE_BASE64 invalide"; exit 1; }
           printf 'storeFile=release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
 
