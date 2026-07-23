@@ -291,9 +291,9 @@ class LapseRenderer {
             if (depth >= 0) {
                 // surface irrégulière, corps avec bruit granulaire figé
                 val b = if (depth < 1) {
-                    if (hash2(x, y) < 0.55f) 0.16f else 0.09f
+                    if (hash2(x, y) < 0.55f) 0.10f else 0.055f
                 } else {
-                    0.10f + 0.05f * hash2(x, y)
+                    0.06f + 0.03f * hash2(x, y)
                 }
                 if (b > g[i]) g[i] = b
             }

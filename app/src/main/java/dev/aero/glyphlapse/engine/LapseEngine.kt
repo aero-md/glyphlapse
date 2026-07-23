@@ -40,7 +40,8 @@ class LapseEngine(private val zone: ZoneId = ZoneId.systemDefault()) {
     ) {
         /** Le service passe à 30 fps quand c'est vrai, sinon 1 tick/s. */
         val animating: Boolean
-            get() = slideT != null || arrivalT != null || format == Format.CYCLE
+            get() = slideT != null || arrivalT != null || format == Format.CYCLE ||
+                secondsMode == SecondsMode.HOURGLASS
     }
 
     var refMillis: Long = defaultRef(zone)
