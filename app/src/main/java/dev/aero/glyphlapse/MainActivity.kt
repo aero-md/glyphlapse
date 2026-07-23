@@ -5,28 +5,33 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -40,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -59,9 +65,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Interface de configuration : date/heure de référence, format d'affichage,
- * mode secondes — persistés en SharedPreferences (le toy écoute) — plus une
- * préview live 25×25 partageant moteur et renderer avec le toy.
+ * Interface de configuration : date/heure de référence, style d'affichage,
+ * animation des secondes — persistés en SharedPreferences (le toy écoute) —
+ * plus une préview live 25×25 partageant moteur et renderer avec le toy.
+ * Style « cartes » (fond noir, légendes serif, valeurs monospace, rouge Nothing).
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,17 +78,27 @@ class MainActivity : ComponentActivity() {
 }
 
 private val BG = Color(0xFF0A0A0B)
-private val PANEL = Color(0xFF141418)
-private val TXT = Color(0xFFE4E4E1)
-private val MUTED = Color(0xFF8A8A93)
+private val CARD = Color(0xFF161619)
+private val CARD_LINE = Color(0x12FFFFFF)
+private val TXT = Color(0xFFF1F1EF)
+private val MUTED = Color(0xFF9A9AA0)
+private val LABEL = Color(0xFFE9E9E7)
 private val ACCENT = Color(0xFFD71921)
+private val GREY_BTN = Color(0xFF2B2B30)
+private val SEL_LINE = Color(0x33FFFFFF)
+private val MENU_BG = Color(0xFF1D1D21)
 
 private val FORMAT_LABELS = mapOf(
     LapseEngine.Format.DETAIL to "Détail",
-    LapseEngine.Format.DETAIL2 to "Détail 2",
+    LapseEngine.Format.DETAIL2 to "Dense",
     LapseEngine.Format.COMPACT to "Compact",
     LapseEngine.Format.CYCLE to "Cycle",
     LapseEngine.Format.DAYS to "Jours",
+)
+
+private val SECONDS_LABELS = listOf(
+    LapseEngine.SecondsMode.RING to "Anneau",
+    LapseEngine.SecondsMode.HOURGLASS to "Sablier",
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,59 +160,59 @@ private fun ConfigScreen() {
             .fillMaxSize()
             .background(BG)
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            "GLYPH LAPSE",
-            color = TXT,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = 6.sp,
-        )
-        Spacer(Modifier.height(20.dp))
-
         MatrixPreview(frame)
-
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
         DiffReadout(refMillis, diff, zone)
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
 
-        SectionTitle("Date de référence")
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            val ldt = LocalDateTime.ofInstant(Instant.ofEpochMilli(refMillis), zone)
-            ConfigButton(ldt.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.FRENCH))) {
-                showDate = true
-            }
-            ConfigButton(ldt.format(DateTimeFormatter.ofPattern("HH:mm"))) {
-                showTime = true
+        // --- Carte Date et heure ---
+        val ldt = LocalDateTime.ofInstant(Instant.ofEpochMilli(refMillis), zone)
+        SettingCard {
+            Legend("Date et heure")
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PillButton(
+                    text = ldt.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.FRENCH)),
+                    bg = ACCENT,
+                    modifier = Modifier.weight(1.5f),
+                ) { showDate = true }
+                PillButton(
+                    text = ldt.format(DateTimeFormatter.ofPattern("HH:mm")),
+                    bg = GREY_BTN,
+                    modifier = Modifier.weight(1f),
+                ) { showTime = true }
             }
         }
-        Spacer(Modifier.height(20.dp))
 
-        SectionTitle("Format d'affichage")
-        ChipsRow(
-            entries = LapseEngine.Format.entries.map { it to (FORMAT_LABELS[it] ?: it.name) },
-            selected = format,
-        ) { format = it; save() }
         Spacer(Modifier.height(16.dp))
 
-        SectionTitle("Secondes — minute en cours")
-        ChipsRow(
-            entries = listOf(
-                LapseEngine.SecondsMode.RING to "Anneau",
-                LapseEngine.SecondsMode.HOURGLASS to "Sablier",
-            ),
-            selected = secondsMode,
-        ) { secondsMode = it; save() }
-        Spacer(Modifier.height(20.dp))
+        // --- Carte Style (sans titre) ---
+        SettingCard {
+            Legend("Animation")
+            SelectField(
+                options = SECONDS_LABELS,
+                selected = secondsMode,
+            ) { secondsMode = it; save() }
 
+            Spacer(Modifier.height(18.dp))
+
+            Legend("Style d'affichage")
+            SelectField(
+                options = LapseEngine.Format.entries.map { it to (FORMAT_LABELS[it] ?: it.name) },
+                selected = format,
+            ) { format = it; save() }
+        }
+
+        Spacer(Modifier.height(22.dp))
         Text(
             "Appui long sur le Glyph Button : format suivant.",
             color = MUTED,
             fontSize = 11.sp,
             fontFamily = FontFamily.Monospace,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
@@ -256,44 +273,95 @@ private fun ConfigScreen() {
 }
 
 @Composable
-private fun SectionTitle(label: String) {
-    Text(
-        label.uppercase(Locale.FRENCH),
-        color = MUTED,
-        fontSize = 11.sp,
-        fontFamily = FontFamily.Monospace,
-        letterSpacing = 2.sp,
+private fun SettingCard(content: @Composable ColumnScope.() -> Unit) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentWidth(Alignment.Start)
-            .padding(bottom = 8.dp),
+            .clip(RoundedCornerShape(22.dp))
+            .background(CARD)
+            .border(1.dp, CARD_LINE, RoundedCornerShape(22.dp))
+            .padding(horizontal = 20.dp, vertical = 22.dp),
+        content = content,
     )
 }
 
 @Composable
-private fun <T> ChipsRow(
-    entries: List<Pair<T, String>>,
+private fun Legend(text: String) {
+    Text(
+        text,
+        color = LABEL,
+        fontSize = 17.sp,
+        fontFamily = FontFamily.Serif,
+        modifier = Modifier.padding(bottom = 10.dp),
+    )
+}
+
+@Composable
+private fun RowScope.PillButton(
+    text: String,
+    bg: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(vertical = 16.dp, horizontal = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            color = Color.White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = FontFamily.Monospace,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun <T> SelectField(
+    options: List<Pair<T, String>>,
     selected: T,
     onSelect: (T) -> Unit,
 ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-    ) {
-        entries.forEach { (value, label) ->
-            FilterChip(
-                selected = value == selected,
-                onClick = { onSelect(value) },
-                label = { Text(label, fontSize = 11.sp, fontFamily = FontFamily.Monospace) },
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = PANEL,
-                    labelColor = MUTED,
-                    selectedContainerColor = Color(0xFF2A1214),
-                    selectedLabelColor = TXT,
-                ),
-            )
+    var expanded by remember { mutableStateOf(false) }
+    val currentLabel = options.firstOrNull { it.first == selected }?.second ?: ""
+    Box {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.5.dp, if (expanded) ACCENT else SEL_LINE, RoundedCornerShape(12.dp))
+                .clickable { expanded = true }
+                .padding(horizontal = 18.dp, vertical = 15.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(currentLabel, color = TXT, fontSize = 15.sp, fontFamily = FontFamily.Monospace)
+            Text("▼", color = ACCENT, fontSize = 10.sp)
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(MENU_BG),
+        ) {
+            options.forEach { (value, label) ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            label,
+                            color = if (value == selected) ACCENT else TXT,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 15.sp,
+                        )
+                    },
+                    onClick = { onSelect(value); expanded = false },
+                )
+            }
         }
     }
 }
@@ -362,18 +430,5 @@ private fun MatrixPreview(frame: IntArray) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ConfigButton(label: String, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF1E1E22),
-            contentColor = TXT,
-        ),
-    ) {
-        Text(label, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
     }
 }

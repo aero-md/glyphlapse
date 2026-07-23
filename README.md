@@ -23,12 +23,22 @@ Specs : [SPECS.md](SPECS.md) · plan : [PLAN.md](PLAN.md).
 *Animations SVG générées depuis le moteur réel
 ([`preview/`](preview/)) — mêmes constantes, mêmes easings que le toy.*
 
+## L'app de réglages
+
+<p align="center">
+  <img src="docs/screenshot-settings.png" alt="App de réglages GlyphLapse" width="300">
+</p>
+
+Date/heure de référence, **animation** des secondes (anneau ou sablier) et
+**style d'affichage** — avec une préview live 25×25 partageant moteur et
+renderer avec le toy.
+
 ## Formats
 
 | Format | Affichage |
 |--------|-----------|
 | Détail *(défaut)* | Une ligne par unité pertinente, jusqu'à 5 (police 5×7 / 3×5 / 3×4 selon le nombre) |
-| Détail 2 | Même granularité, 2 unités par ligne si besoin — 3×5 partout |
+| Dense | Même granularité, 2 unités par ligne si besoin — 3×5 partout |
 | Compact | Les 2 unités les plus significatives en 5×7 |
 | Cycle | Une unité plein écran, slide toutes les 2 s |
 | Jours | Total de jours (« J-42 » en compte à rebours) |
