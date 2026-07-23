@@ -1,0 +1,411 @@
+<title>GlyphLapse — préview interactive</title>
+<style>
+  :root{
+    --bg:#0B0B0D; --panel:#141418; --line:#26262D; --led:#F2F2EF;
+    --txt:#E4E4E1; --muted:#8A8A93; --accent:#D71921;
+    font-size:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:ui-monospace,"Cascadia Mono",Consolas,Menlo,monospace;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:2rem 1rem 3rem;
+  }
+  header{width:100%;max-width:880px;margin-bottom:1.6rem}
+  #title{display:block;image-rendering:pixelated;height:34px}
+  .tagline{color:var(--muted);font-size:.8rem;margin-top:.55rem;letter-spacing:.02em}
+  .tagline b{color:var(--txt);font-weight:600}
+  main{display:flex;gap:1.4rem;width:100%;max-width:880px;flex-wrap:wrap}
+  .device{
+    flex:0 0 auto;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:1.4rem;display:flex;flex-direction:column;
+    align-items:center;gap:1rem;
+  }
+  .bezel{
+    border-radius:50%;padding:14px;
+    background:radial-gradient(circle at 38% 30%, #1B1B20 0%, #101013 70%);
+    border:1px solid #2C2C33;
+  }
+  canvas#matrix{display:block;border-radius:50%}
+  .readout{
+    width:100%;font-size:.78rem;color:var(--muted);text-align:center;
+    line-height:1.5;min-height:2.4em;font-variant-numeric:tabular-nums;
+  }
+  .readout .dir{color:var(--accent);text-transform:uppercase;letter-spacing:.12em;font-size:.7rem}
+  .rack{flex:1 1 300px;display:flex;flex-direction:column;gap:1rem;min-width:280px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem}
+  .card h2{
+    margin:0 0 .7rem;font-size:.68rem;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.18em;
+  }
+  input[type=datetime-local]{
+    width:100%;background:var(--bg);color:var(--txt);border:1px solid var(--line);
+    border-radius:8px;padding:.55rem .7rem;font:inherit;font-size:.9rem;
+    color-scheme:dark;
+  }
+  input[type=datetime-local]:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .row{display:flex;gap:.5rem;flex-wrap:wrap}
+  button{
+    font:inherit;font-size:.8rem;background:var(--bg);color:var(--txt);
+    border:1px solid var(--line);border-radius:8px;padding:.45rem .75rem;
+    cursor:pointer;transition:border-color .15s,color .15s;
+  }
+  button:hover{border-color:#4A4A55}
+  button.on{border-color:var(--accent);color:#fff}
+  button.on::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--accent);margin-right:.5em;vertical-align:1px}
+  .glyphbtn{
+    align-self:flex-start;display:flex;align-items:center;gap:.8rem;
+    background:var(--bg);border:1px solid var(--line);border-radius:999px;
+    padding:.6rem 1.1rem .6rem .7rem;font-size:.8rem;
+  }
+  .glyphbtn .dot{width:22px;height:22px;border-radius:50%;background:#1E1E24;
+    border:1px solid #3A3A44;transition:background .12s}
+  .glyphbtn:active .dot{background:var(--led);box-shadow:0 0 12px rgba(242,242,239,.7)}
+  .hint{color:var(--muted);font-size:.72rem;line-height:1.55;margin-top:.6rem}
+  footer{margin-top:2rem;color:var(--muted);font-size:.72rem;max-width:880px;width:100%;
+    border-top:1px solid var(--line);padding-top:1rem;line-height:1.6}
+  @media (max-width:760px){ main{justify-content:center} .device{width:100%;} }
+</style>
+
+<header>
+  <canvas id="title" width="340" height="34" aria-label="GLYPHLAPSE"></canvas>
+  <p class="tagline">Glyph Toy pour Nothing Phone (3) — temps écoulé <b>depuis</b> une date,
+  ou restant <b>jusqu'à</b> elle. Préview de référence : mêmes polices, mêmes règles,
+  même anneau des secondes que le toy Kotlin.</p>
+</header>
+
+<main>
+  <section class="device" aria-label="Simulation de la Glyph Matrix">
+    <div class="bezel"><canvas id="matrix" width="375" height="375"></canvas></div>
+    <p class="readout"><span class="dir" id="ro-dir"></span><br><span id="ro-txt"></span></p>
+  </section>
+
+  <section class="rack">
+    <div class="card">
+      <h2>Date de référence</h2>
+      <input type="datetime-local" id="ref" step="1">
+      <div class="row" style="margin-top:.6rem">
+        <button data-preset="year">1ᵉʳ janv.</button>
+        <button data-preset="5d">Il y a 5 jours</button>
+        <button data-preset="noel">Noël</button>
+        <button data-preset="an2000">An 2000</button>
+        <button data-preset="10s">Dans 10 s ⚡</button>
+      </div>
+      <p class="hint">Passé → « depuis » (anneau horaire). Futur → « jusqu'à »
+      (anneau anti-horaire). <b>Dans 10 s</b> déclenche l'animation d'arrivée.</p>
+    </div>
+
+    <div class="card">
+      <h2>Format d'affichage</h2>
+      <div class="row" id="formats">
+        <button data-f="0" class="on">Détail</button>
+        <button data-f="1">Compact</button>
+        <button data-f="2">Cycle</button>
+        <button data-f="3">Jours</button>
+      </div>
+      <p class="hint">Détail : une ligne par unité pertinente (max 4), police 3×5 —
+      grossit en 5×7 s'il y a ≤ 2 lignes. Les secondes vivent sur l'anneau, jamais
+      en ligne (sauf diff &lt; 1 min).</p>
+    </div>
+
+    <div class="card">
+      <h2>Glyph Button</h2>
+      <button class="glyphbtn" id="longpress"><span class="dot"></span>Appui long — format suivant</button>
+      <p class="hint">Sur l'appareil : appui long sur le bouton tactile au dos.
+      Appui court = cycle des toys (géré par le système).</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Décomposition calendaire réelle (années/mois exacts, fins de mois clampées,
+  bissextiles) — miroir de <code>java.time</code> côté Kotlin. Unités : A · M · J ·
+  H · MIN, secondes sur l'anneau. Voir <code>SPECS.md</code> du repo GlyphLapse.
+</footer>
+
+<script>
+"use strict";
+/* ---------- géométrie du disque ---------- */
+const SIZE=25, CX=12, CY=12, R=12.5;
+const inside=[], dist=new Float32Array(SIZE*SIZE);
+for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){
+  const d=Math.hypot(x-CX,y-CY); dist[y*SIZE+x]=d;
+  if(d<R) inside.push(y*SIZE+x);
+}
+/* anneau : cellules du bord triées par angle depuis 12h, sens horaire */
+const ring=inside.filter(i=>dist[i]>=11.3).map(i=>{
+  const x=i%SIZE,y=(i-x)/SIZE;
+  let a=Math.atan2(x-CX,-(y-CY)); if(a<0)a+=2*Math.PI;
+  return {i,a};
+}).sort((p,q)=>p.a-q.a);
+
+/* ---------- polices (largeur variable, hauteurs 5 et 7) ---------- */
+const F3={h:5,g:{
+ "0":["111","101","101","101","111"],"1":["010","110","010","010","111"],
+ "2":["111","001","111","100","111"],"3":["111","001","111","001","111"],
+ "4":["101","101","111","001","001"],"5":["111","100","111","001","111"],
+ "6":["111","100","111","101","111"],"7":["111","001","001","010","010"],
+ "8":["111","101","111","101","111"],"9":["111","101","111","001","111"],
+ "A":["010","101","111","101","101"],"J":["001","001","001","101","111"],
+ "H":["101","101","111","101","101"],"S":["011","100","010","001","110"],
+ "I":["111","010","010","010","111"],
+ "M":["10001","11011","10101","10001","10001"],
+ "N":["1001","1101","1011","1001","1001"],
+ "-":["000","000","111","000","000"],"+":["000","010","111","010","000"],
+ "G":["011","100","101","101","011"],"L":["100","100","100","100","111"],
+ "Y":["101","101","010","010","010"],"P":["111","101","111","100","100"],
+ "E":["111","100","110","100","111"]
+}};
+const F5={h:7,g:{
+ "0":["01110","10001","10011","10101","11001","10001","01110"],
+ "1":["00100","01100","00100","00100","00100","00100","01110"],
+ "2":["01110","10001","00001","00110","01000","10000","11111"],
+ "3":["11111","00010","00100","00010","00001","10001","01110"],
+ "4":["00010","00110","01010","10010","11111","00010","00010"],
+ "5":["11111","10000","11110","00001","00001","10001","01110"],
+ "6":["00110","01000","10000","11110","10001","10001","01110"],
+ "7":["11111","00001","00010","00100","01000","01000","01000"],
+ "8":["01110","10001","10001","01110","10001","10001","01110"],
+ "9":["01110","10001","10001","01111","00001","00010","01100"],
+ "A":["01110","10001","10001","11111","10001","10001","10001"],
+ "J":["00111","00010","00010","00010","00010","10010","01100"],
+ "H":["10001","10001","10001","11111","10001","10001","10001"],
+ "M":["10001","11011","10101","10101","10001","10001","10001"],
+ "S":["01111","10000","10000","01110","00001","00001","11110"],
+ "-":["000","000","000","111","000","000","000"]
+}};
+function chW(f,c){return f.g[c]?f.g[c][0].length:0}
+function textW(f,s){let w=0;for(const c of s)w+=chW(f,c)+1;return w-1}
+function drawText(g,f,s,x0,y0,b){
+  let x=x0;
+  for(const c of s){
+    const gl=f.g[c]; if(!gl){x+=4;continue}
+    for(let r=0;r<f.h;r++)for(let k=0;k<gl[r].length;k++)
+      if(gl[r][k]==="1") set(g,x+k,y0+r,b);
+    x+=gl[0].length+1;
+  }
+}
+function drawCentered(g,f,s,yc,b){
+  drawText(g,f,s,Math.round((SIZE-textW(f,s))/2),Math.round(yc-f.h/2),b);
+}
+function set(g,x,y,b){
+  if(x<0||y<0||x>=SIZE||y>=SIZE)return;
+  const i=y*SIZE+x; if(dist[i]<R && b>g[i]) g[i]=b;
+}
+
+/* ---------- décomposition calendaire (miroir java.time) ---------- */
+function addMonthsClamped(d,n){
+  const r=new Date(d), day=r.getDate();
+  r.setDate(1); r.setMonth(r.getMonth()+n);
+  const dim=new Date(r.getFullYear(),r.getMonth()+1,0).getDate();
+  r.setDate(Math.min(day,dim)); return r;
+}
+function breakdown(refMs,nowMs){
+  const dir=nowMs>=refMs?"since":"until";
+  const a0=new Date(Math.min(refMs,nowMs)), b=new Date(Math.max(refMs,nowMs));
+  let a=new Date(a0), years=0, months=0;
+  while(addMonthsClamped(a,12)<=b){a=addMonthsClamped(a,12);years++}
+  while(addMonthsClamped(a,1)<=b){a=addMonthsClamped(a,1);months++}
+  let s=Math.floor((b-a)/1000);
+  const days=Math.floor(s/86400); s-=days*86400;
+  const hours=Math.floor(s/3600); s-=hours*3600;
+  const minutes=Math.floor(s/60); const seconds=s-minutes*60;
+  return {dir,years,months,days,hours,minutes,seconds,
+          totalDays:Math.floor((b-a0)/86400000)};
+}
+/* unités pertinentes, hors secondes : [étiquette3, étiquette1, valeur] */
+function units(d){
+  const all=[["A","A",d.years],["M","M",d.months],["J","J",d.days],
+             ["H","H",d.hours],["MIN","M",d.minutes]];
+  let i=0; while(i<all.length-1 && all[i][2]===0) i++;
+  return all.slice(i);
+}
+
+/* ---------- rendu des formats ---------- */
+function linesLayout(g,rows,f,b){
+  const H=rows.length*f.h+(rows.length-1);
+  const y0=Math.round((SIZE-H)/2);
+  rows.forEach((s,k)=>drawText(g,f,s,Math.round((SIZE-textW(f,s))/2),y0+k*(f.h+1),b));
+}
+function renderContent(g,fmt,d,t){
+  const u=units(d);
+  if(d.years===0&&d.months===0&&d.days===0&&d.hours===0&&d.minutes===0){
+    drawCentered(g,F5,d.seconds+"S",12,1); return;
+  }
+  if(fmt===0){ /* Détail — MIN saute dès qu'il y aurait 4 lignes (clipping bas de disque) */
+    let keep=u.slice(0,4);
+    if(keep.length===4) keep=keep.filter(x=>x[0]!=="MIN");
+    if(keep.length<=2) linesLayout(g,keep.map(x=>x[2]+x[1]),F5,1);
+    else               linesLayout(g,keep.map(x=>x[2]+x[0]),F3,1);
+  }else if(fmt===1){ /* Compact */
+    linesLayout(g,u.slice(0,2).map(x=>x[2]+x[1]),F5,1);
+  }else if(fmt===2){ /* Cycle */
+    const per=2.0, n=u.length, tt=t%(per*n);
+    const idx=Math.floor(tt/per), ph=tt-idx*per;
+    const sl=Math.min(1,ph/0.3), e=1-Math.pow(1-sl,3);
+    const cur=u[idx], prev=u[(idx+n-1)%n];
+    const page=(unit,dx)=>{
+      const s=String(unit[2]);
+      drawText(g,F5,s,Math.round((SIZE-textW(F5,s))/2)+dx,4,1);
+      drawText(g,F3,unit[0],Math.round((SIZE-textW(F3,unit[0]))/2)+dx,15,0.55);
+    };
+    if(sl<1&&n>1) page(prev,Math.round(-e*SIZE));
+    page(cur,n>1?Math.round((1-e)*SIZE):0);
+  }else{ /* Jours */
+    const s=d.dir==="until"?("J-"+d.totalDays):(d.totalDays+"J");
+    drawCentered(g,textW(F5,s)<=SIZE?F5:F3,s,12,1);
+  }
+}
+function renderRing(g,d){
+  const n=ring.length, k=Math.round(d.seconds/60*n);
+  for(let j=0;j<k;j++){
+    const idx=d.dir==="since"?j:(n-1-j)%n;
+    g[ring[idx].i]=Math.max(g[ring[idx].i], j===k-1?1:0.32);
+  }
+}
+function renderArrival(g,t){
+  let f=Math.max(Math.exp(-6*t), t>0.25?0.9*Math.exp(-6*(t-0.25)):0)*1.1;
+  if(f>0.04) for(const i of inside) g[i]=Math.max(g[i],Math.min(1,f));
+  for(let w=0;w<3;w++){
+    const r=14*(t-0.3-w*0.35);
+    if(r>0&&r<14) for(const i of inside)
+      if(Math.abs(dist[i]-r)<0.7) g[i]=1;
+  }
+  const p=(0.5+0.5*Math.sin(2*Math.PI*3*t))*(1-t/4);
+  for(const c of ring) g[c.i]=Math.max(g[c.i],p);
+}
+
+/* ---------- état & boucle ---------- */
+const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let refMs, format=0, lastDir=null, arrival=null;
+let slide=null; /* {from:Float32Array, start} */
+const t0=performance.now()/1000;
+
+function snapshot(){
+  const g=new Float32Array(SIZE*SIZE), now=Date.now(), d=breakdown(refMs,now);
+  renderContent(g,format,d,performance.now()/1000-t0);
+  renderRing(g,d); return g;
+}
+function setFormat(f){
+  if(f===format)return;
+  if(!reduced) slide={from:snapshot(),start:performance.now()/1000};
+  format=f;
+  document.querySelectorAll("#formats button").forEach(b=>
+    b.classList.toggle("on",+b.dataset.f===format));
+}
+
+const cvs=document.getElementById("matrix"), ctx=cvs.getContext("2d");
+const CELL=cvs.width/SIZE;
+function paint(g){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  for(const i of inside){
+    const x=i%SIZE, y=(i-x)/SIZE, b=g[i];
+    ctx.beginPath();
+    ctx.arc((x+0.5)*CELL,(y+0.5)*CELL,CELL*0.32,0,7);
+    if(b<=0.02){ ctx.fillStyle="#1B1B20"; ctx.shadowBlur=0; }
+    else{
+      ctx.fillStyle=`rgba(242,242,239,${0.25+0.75*b})`;
+      ctx.shadowColor=`rgba(242,242,239,${0.8*b})`;
+      ctx.shadowBlur=CELL*0.55*b;
+    }
+    ctx.fill(); ctx.shadowBlur=0;
+  }
+}
+
+const roDir=document.getElementById("ro-dir"), roTxt=document.getElementById("ro-txt");
+const FMT_NAMES=["Détail","Compact","Cycle","Jours"];
+const UNIT_FR=[["an","ans"],["mois","mois"],["jour","jours"],["h","h"],["min","min"]];
+function updateReadout(d){
+  roDir.textContent=(d.dir==="since"?"Depuis":"Jusqu'au")+" · "+FMT_NAMES[format];
+  const parts=[d.years,d.months,d.days,d.hours,d.minutes].map((v,i)=>
+    v>0?v+" "+UNIT_FR[i][v>1?1:0]:null).filter(Boolean);
+  parts.push(d.seconds+" s");
+  roTxt.textContent=new Date(refMs).toLocaleString("fr-FR",{dateStyle:"medium",timeStyle:"short"})
+    +" — "+parts.join(" ");
+}
+
+function frame(){
+  const tNow=performance.now()/1000, now=Date.now();
+  const d=breakdown(refMs,now);
+  if(lastDir==="until"&&d.dir==="since"&&!reduced) arrival={start:tNow};
+  lastDir=d.dir;
+
+  let g=new Float32Array(SIZE*SIZE);
+  renderContent(g,format,d,tNow-t0);
+  renderRing(g,d);
+
+  if(slide){ /* slide horizontal ancien → nouveau format */
+    const u=Math.min(1,(tNow-slide.start)/0.3), e=1-Math.pow(1-u,3);
+    if(u>=1) slide=null;
+    else{
+      const mix=new Float32Array(SIZE*SIZE), dx=Math.round(e*SIZE);
+      const put=(src,off)=>{for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){
+        const sx=x+off; if(sx<0||sx>=SIZE)continue;
+        const b=src[y*SIZE+sx]; if(b>0) set(mix,x,y,b);}};
+      put(slide.from,dx); put(g,dx-SIZE);
+      g=mix;
+    }
+  }
+  if(arrival){
+    const ta=tNow-arrival.start;
+    if(ta>4) arrival=null;
+    else{ for(const i of inside) g[i]*=0.25; renderArrival(g,ta); }
+  }
+  paint(g); updateReadout(d);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- contrôles ---------- */
+const input=document.getElementById("ref");
+function setRef(ms){
+  refMs=ms; lastDir=null; arrival=null;
+  const d=new Date(ms-new Date(ms).getTimezoneOffset()*60000);
+  input.value=d.toISOString().slice(0,19);
+}
+input.addEventListener("change",()=>{
+  const v=new Date(input.value).getTime();
+  if(!isNaN(v)){refMs=v;lastDir=null;arrival=null;}
+});
+document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>{
+  const now=new Date();
+  switch(b.dataset.preset){
+    case "year": setRef(new Date(now.getFullYear(),0,1).getTime()); break;
+    case "5d":   setRef(Date.now()-5*86400000-3*3600000-1000*60*7); break;
+    case "noel":{
+      let noel=new Date(now.getFullYear(),11,25);
+      if(noel<now) noel=new Date(now.getFullYear()+1,11,25);
+      setRef(noel.getTime()); break;
+    }
+    case "an2000": setRef(new Date(2000,0,1).getTime()); break;
+    case "10s":  setRef(Date.now()+10000); break;
+  }
+}));
+document.querySelectorAll("#formats button").forEach(b=>
+  b.addEventListener("click",()=>setFormat(+b.dataset.f)));
+document.getElementById("longpress").addEventListener("click",()=>setFormat((format+1)%4));
+
+/* ---------- titre en dot-matrix ---------- */
+(function(){
+  const c=document.getElementById("title"), x=c.getContext("2d");
+  const word="GLYPHLAPSE", dot=3;
+  let w=0; for(const ch of word) w+=chW(F3,ch)+1;
+  c.width=(w+1)*(dot+2); c.height=5*(dot+2)+4;
+  let cx=0;
+  for(const ch of word){
+    const gl=F3.g[ch];
+    for(let r=0;r<5;r++)for(let k=0;k<gl[r].length;k++)if(gl[r][k]==="1"){
+      x.fillStyle="#F2F2EF";
+      x.beginPath();x.arc((cx+k)*(dot+2)+dot,r*(dot+2)+dot+2,dot*0.62,0,7);x.fill();
+    }
+    cx+=gl[0].length+1;
+  }
+  x.fillStyle="#D71921";
+  x.beginPath();x.arc(cx*(dot+2)+dot,4*(dot+2)+dot+2,dot*0.62,0,7);x.fill();
+})();
+
+setRef(new Date(new Date().getFullYear(),0,1).getTime());
+requestAnimationFrame(frame);
+</script>
