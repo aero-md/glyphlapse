@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,9 +48,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -84,6 +91,7 @@ private val TXT = Color(0xFFF1F1EF)
 private val MUTED = Color(0xFF9A9AA0)
 private val LABEL = Color(0xFFE9E9E7)
 private val ACCENT = Color(0xFFD71921)
+private val YELLOW = Color(0xFFFFC700) // brand yellow Nothing (playground.nothing.tech)
 private val GREY_BTN = Color(0xFF2B2B30)
 private val SEL_LINE = Color(0x33FFFFFF)
 private val MENU_BG = Color(0xFF1D1D21)
@@ -132,6 +140,13 @@ private fun ConfigScreen() {
     var showDate by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
 
+    // Dates favorites (usage app) : liste persistée, carte collapsible.
+    var savedDates by remember { mutableStateOf(Config.savedDates(prefs)) }
+    var savedExpanded by remember { mutableStateOf(true) }
+    var showAddDate by remember { mutableStateOf(false) }
+    var showAddTime by remember { mutableStateOf(false) }
+    var addDraftMillis by remember { mutableStateOf(0L) }
+
     fun now() = System.nanoTime() / 1e9
 
     fun save() {
@@ -140,6 +155,11 @@ private fun ConfigScreen() {
             .putString(Config.KEY_FORMAT, format.name)
             .putString(Config.KEY_SECONDS, secondsMode.name)
             .apply()
+    }
+
+    fun persistSaved(list: List<Long>) {
+        savedDates = list
+        Config.setSavedDates(prefs, list)
     }
 
     LaunchedEffect(Unit) {
@@ -184,6 +204,48 @@ private fun ConfigScreen() {
                     bg = GREY_BTN,
                     modifier = Modifier.weight(1f),
                 ) { showTime = true }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // --- Carte Dates sauvegardées (collapsible, accent jaune) ---
+        SettingCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { savedExpanded = !savedExpanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    "Dates sauvegardées",
+                    color = LABEL,
+                    fontSize = 17.sp,
+                    fontFamily = FontFamily.Serif,
+                )
+                Text(
+                    "▾",
+                    color = MUTED,
+                    fontSize = 13.sp,
+                    modifier = Modifier.rotate(if (savedExpanded) 180f else 0f),
+                )
+            }
+            if (savedExpanded) {
+                Spacer(Modifier.height(14.dp))
+                savedDates.forEach { millis ->
+                    SavedDateRow(
+                        millis = millis,
+                        zone = zone,
+                        applied = millis == refMillis,
+                        onApply = { refMillis = millis; save() },
+                        onDelete = { persistSaved(savedDates - millis) },
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
+                if (savedDates.size < Config.SAVED_MAX) {
+                    AddDateButton { addDraftMillis = refMillis; showAddDate = true }
+                }
             }
         }
 
@@ -262,6 +324,62 @@ private fun ConfigScreen() {
             },
             dismissButton = {
                 TextButton(onClick = { showTime = false }) { Text("Annuler") }
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    TimePicker(state)
+                }
+            },
+        )
+    }
+
+    // Ajout d'une date favorite : date puis heure, puis append (max SAVED_MAX).
+    if (showAddDate) {
+        val base = LocalDateTime.ofInstant(Instant.ofEpochMilli(addDraftMillis), zone)
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = base.toLocalDate()
+                .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showAddDate = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { utc ->
+                        val date = Instant.ofEpochMilli(utc)
+                            .atZone(ZoneId.of("UTC")).toLocalDate()
+                        addDraftMillis = date.atTime(base.toLocalTime()).atZone(zone)
+                            .toInstant().toEpochMilli()
+                    }
+                    showAddDate = false
+                    showAddTime = true
+                }) { Text("Suivant") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDate = false }) { Text("Annuler") }
+            },
+        ) { DatePicker(state) }
+    }
+
+    if (showAddTime) {
+        val draft = LocalDateTime.ofInstant(Instant.ofEpochMilli(addDraftMillis), zone)
+        val state = rememberTimePickerState(
+            initialHour = draft.hour,
+            initialMinute = draft.minute,
+            is24Hour = true,
+        )
+        AlertDialog(
+            onDismissRequest = { showAddTime = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val millis = draft.toLocalDate()
+                        .atTime(state.hour, state.minute)
+                        .atZone(zone).toInstant().toEpochMilli()
+                    if (savedDates.size < Config.SAVED_MAX) persistSaved(savedDates + millis)
+                    showAddTime = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddTime = false }) { Text("Annuler") }
             },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -363,6 +481,103 @@ private fun <T> SelectField(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SavedDateRow(
+    millis: Long,
+    zone: ZoneId,
+    applied: Boolean,
+    onApply: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val ldt = LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), zone)
+    val dateStr = ldt.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.FRENCH))
+    val timeStr = ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(GREY_BTN)
+            .then(
+                if (applied) Modifier.border(1.5.dp, YELLOW, RoundedCornerShape(14.dp))
+                else Modifier
+            )
+            .clickable(onClick = onApply),
+    ) {
+        // Contenu (carte = appliquer) ; padding droit pour laisser la zone de la croix.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 48.dp, top = 15.dp, bottom = 15.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                dateStr,
+                color = Color.White,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = FontFamily.Monospace,
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                timeStr,
+                color = Color.White.copy(alpha = 0.55f),
+                fontSize = 13.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+        // Croix de suppression, par-dessus : grande zone de clic pleine hauteur.
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .width(48.dp)
+                .clickable(onClick = onDelete),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("✕", color = MUTED, fontSize = 16.sp)
+        }
+    }
+}
+
+@Composable
+private fun AddDateButton(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .drawBehind {
+                drawRoundRect(
+                    color = SEL_LINE,
+                    cornerRadius = CornerRadius(14.dp.toPx()),
+                    style = Stroke(
+                        width = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(11f, 8f)),
+                    ),
+                )
+            }
+            .clickable(onClick = onClick)
+            .padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "+",
+            color = YELLOW,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            "Nouvelle date",
+            color = TXT,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = FontFamily.Monospace,
+        )
     }
 }
 

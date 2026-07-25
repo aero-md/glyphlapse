@@ -13,9 +13,26 @@ object Config {
     const val KEY_REF = "ref_epoch_millis"
     const val KEY_FORMAT = "format"
     const val KEY_SECONDS = "seconds_mode"
+    const val KEY_SAVED = "saved_dates"
+
+    /** Nombre maximum de dates favorites conservées. */
+    const val SAVED_MAX = 5
 
     fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    /** Dates favorites : liste d'epoch millis, persistée en CSV (usage app uniquement). */
+    fun savedDates(prefs: SharedPreferences): List<Long> =
+        prefs.getString(KEY_SAVED, null)
+            ?.split(',')
+            ?.mapNotNull { it.toLongOrNull() }
+            ?: emptyList()
+
+    fun setSavedDates(prefs: SharedPreferences, dates: List<Long>) {
+        prefs.edit()
+            .putString(KEY_SAVED, dates.joinToString(",") { it.toString() })
+            .apply()
+    }
 
     /** Idempotent : ne touche que ce qui a changé (préserve slides/arrivée en cours). */
     fun applyTo(prefs: SharedPreferences, engine: LapseEngine) {
