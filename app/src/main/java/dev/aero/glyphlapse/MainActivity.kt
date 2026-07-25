@@ -58,6 +58,8 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -543,7 +545,13 @@ private fun SavedDateRow(
                 .clickable(onClick = onDelete),
             contentAlignment = Alignment.Center,
         ) {
-            Text("✕", color = MUTED, fontSize = 16.sp)
+            Text(
+                "✕",
+                color = MUTED,
+                fontSize = 16.sp,
+                lineHeight = 16.sp,
+                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)),
+            )
         }
     }
 }

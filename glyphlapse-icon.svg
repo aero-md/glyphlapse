@@ -1,20 +1,46 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Icone de marque GlyphLapse — concept « Sweep », style Nothing :
-       fond blanc, anneau des secondes + aiguille noire, moyeu rouge #D71921.
+  <!-- Icone de marque GlyphLapse — concept « Grain », style Nothing :
+       fond blanc, sablier en matrice de points (rangees 7-5-3-1-3-5-7), le point
+       central de l'avant-derniere rangee en rouge #D71921 (grain qui tombe).
        Miroir de app/src/main/res/drawable/ic_launcher.xml. -->
 
   <!-- fond blanc, coins arrondis facon tuile Nothing -->
   <rect width="512" height="512" rx="112" fill="#FFFFFF"/>
 
-  <!-- anneau des secondes : ouverture de 70 deg en haut -->
-  <path d="M370.72,92.17 A200,200 0 1 1 141.28,92.17"
-        fill="none" stroke="#0A0A0A" stroke-width="64" stroke-linecap="round"/>
+  <!-- sablier : points noirs -->
+  <g fill="#0A0A0A">
+    <rect x="101.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="147.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="193.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="239.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="285.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="331.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="377.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="147.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="193.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="239.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="285.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="331.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="193.9" y="193.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="239.9" y="193.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="285.9" y="193.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="239.9" y="239.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="193.9" y="285.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="239.9" y="285.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="285.9" y="285.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="147.9" y="331.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="193.9" y="331.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="285.9" y="331.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="331.9" y="331.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="101.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="147.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="193.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="239.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="285.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="331.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="377.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
+  </g>
 
-  <!-- aiguille noire, inclinee vers ~2h -->
-  <line x1="256" y1="256" x2="410.15" y2="167.00"
-        stroke="#0A0A0A" stroke-width="64" stroke-linecap="round"/>
-
-  <!-- moyeu : contour blanc (26 px) + disque rouge de marque -->
-  <circle cx="256" cy="256" r="70" fill="#FFFFFF"/>
-  <circle cx="256" cy="256" r="44" fill="#D71921"/>
+  <!-- grain rouge : point central de l'avant-derniere rangee -->
+  <rect x="239.9" y="331.9" width="32.2" height="32.2" rx="8.43" fill="#D71921"/>
 </svg>
