@@ -55,6 +55,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -224,12 +225,17 @@ private fun ConfigScreen() {
                     fontSize = 17.sp,
                     fontFamily = FontFamily.Serif,
                 )
-                Text(
-                    "▾",
-                    color = MUTED,
-                    fontSize = 13.sp,
-                    modifier = Modifier.rotate(if (savedExpanded) 180f else 0f),
-                )
+                Canvas(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .rotate(if (savedExpanded) 180f else 0f),
+                ) {
+                    val w = size.width
+                    val h = size.height
+                    val sw = 2.dp.toPx()
+                    drawLine(MUTED, Offset(w * 0.22f, h * 0.38f), Offset(w * 0.5f, h * 0.64f), sw, StrokeCap.Round)
+                    drawLine(MUTED, Offset(w * 0.5f, h * 0.64f), Offset(w * 0.78f, h * 0.38f), sw, StrokeCap.Round)
+                }
             }
             if (savedExpanded) {
                 Spacer(Modifier.height(14.dp))
