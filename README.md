@@ -6,9 +6,10 @@
 
 Glyph Toy « compteur temporel » pour la Glyph Matrix du Nothing Phone (3) :
 temps écoulé **depuis** une date de référence, ou restant **jusqu'à** elle
-(direction déduite automatiquement). Configurable via l'app (date/heure,
-format d'affichage, secondes en anneau ou sablier), appui long sur le
-Glyph Button pour changer de format.
+(direction déduite automatiquement). Jusqu'à **3 lapse** configurables
+(chacun sa date, son format, son animation), appui long sur le Glyph Button
+pour passer au lapse actif suivant. Configurable via l'app (date/heure,
+format d'affichage, secondes en anneau ou sablier).
 
 **[▶ Préview interactive](https://aero-md.github.io/glyphlapse/)** — le
 prototype web ([glyph-lapse-preview.html](glyph-lapse-preview.html)) jouable
@@ -37,10 +38,9 @@ renderer avec le toy.
 
 | Format | Affichage |
 |--------|-----------|
-| Détail *(défaut)* | Une ligne par unité pertinente, jusqu'à 5 (police 5×7 / 3×5 / 3×4 selon le nombre) |
-| Dense | Même granularité, 2 unités par ligne si besoin — 3×5 partout |
+| Dense *(défaut)* | Granularité complète, 2 unités par ligne si besoin — 3×5 partout |
 | Compact | Les 2 unités les plus significatives en 5×7 |
-| Cycle | Une unité plein écran, slide toutes les 2 s |
+| Cycle | Une unité plein écran, défilement vertical toutes les 2 s |
 | Jours | Total de jours (« J-42 » en compte à rebours) |
 
 Les secondes vivent sur l'**anneau** périphérique (horaire en depuis,
@@ -83,15 +83,19 @@ MainActivity.kt                            configuration Compose + préview live
 ```
 
 Boucle de rendu : 1 tick/s **aligné sur la seconde** au repos, 30 fps pendant
-les animations (slide de format, format Cycle, arrivée). AOD : `EVENT_AOD`
+les animations (changement de lapse, format Cycle, arrivée). AOD : `EVENT_AOD`
 chaque minute → rendu statique sans anneau/sablier.
+
+Multi-lapse : jusqu'à 3 lapse indépendants (date/format/animation propres),
+persistés par index dans les mêmes SharedPreferences ; `active_lapse` désigne
+celui rendu sur la Glyph. Les dates favorites sont communes à tous les lapse.
 
 ## Interaction
 
 | Event | Action |
 |-------|--------|
 | Appui court | Système : cycle entre les toys |
-| Appui long (« change ») | Format suivant (slide + tick haptique) |
+| Appui long (« change ») | Lapse actif suivant (slide horizontal + tick haptique) |
 | Compte à rebours à 0 | Animation d'arrivée + pattern haptique, bascule en depuis |
 | `onUnbind` | Stop boucle + extinction matrice |
 
