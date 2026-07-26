@@ -9,38 +9,38 @@
 
   <!-- sablier : points noirs -->
   <g fill="#0A0A0A">
-    <rect x="101.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="147.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="193.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="239.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="285.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="331.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="377.9" y="101.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="147.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="193.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="239.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="285.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="331.9" y="147.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="193.9" y="193.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="239.9" y="193.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="285.9" y="193.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="239.9" y="239.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="193.9" y="285.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="239.9" y="285.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="285.9" y="285.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="147.9" y="331.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="193.9" y="331.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="285.9" y="331.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="331.9" y="331.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="101.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="147.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="193.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="239.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="285.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="331.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
-    <rect x="377.9" y="377.9" width="32.2" height="32.2" rx="8.43"/>
+    <rect x="68.4" y="68.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="124.4" y="68.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="180.4" y="68.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="236.4" y="68.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="292.4" y="68.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="348.4" y="68.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="404.4" y="68.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="124.4" y="124.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="180.4" y="124.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="236.4" y="124.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="292.4" y="124.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="348.4" y="124.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="180.4" y="180.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="236.4" y="180.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="292.4" y="180.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="236.4" y="236.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="180.4" y="292.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="236.4" y="292.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="292.4" y="292.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="124.4" y="348.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="180.4" y="348.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="292.4" y="348.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="348.4" y="348.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="68.4" y="404.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="124.4" y="404.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="180.4" y="404.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="236.4" y="404.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="292.4" y="404.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="348.4" y="404.4" width="39.2" height="39.2" rx="10.27"/>
+    <rect x="404.4" y="404.4" width="39.2" height="39.2" rx="10.27"/>
   </g>
 
   <!-- grain rouge : point central de l'avant-derniere rangee -->
-  <rect x="239.9" y="331.9" width="32.2" height="32.2" rx="8.43" fill="#D71921"/>
+  <rect x="236.4" y="348.4" width="39.2" height="39.2" rx="10.27" fill="#D71921"/>
 </svg>
