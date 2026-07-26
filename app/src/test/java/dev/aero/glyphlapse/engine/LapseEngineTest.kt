@@ -62,8 +62,6 @@ class LapseEngineTest {
     @Test
     fun `cycle de format - ordre et event`() {
         val e = engine()
-        assertEquals(LapseEngine.Format.DETAIL, e.format)
-        e.cycleFormat(0.0)
         assertEquals(LapseEngine.Format.DETAIL2, e.format)
         e.cycleFormat(0.0)
         assertEquals(LapseEngine.Format.COMPACT, e.format)
@@ -72,8 +70,8 @@ class LapseEngineTest {
         e.cycleFormat(0.0)
         assertEquals(LapseEngine.Format.DAYS, e.format)
         e.cycleFormat(0.0)
-        assertEquals(LapseEngine.Format.DETAIL, e.format) // boucle
-        assertEquals(5, e.drainEvents().count { it == LapseEngine.Event.FormatChanged })
+        assertEquals(LapseEngine.Format.DETAIL2, e.format) // boucle
+        assertEquals(4, e.drainEvents().count { it == LapseEngine.Event.FormatChanged })
     }
 
     @Test
@@ -82,7 +80,7 @@ class LapseEngineTest {
         e.cycleFormat(10.0)
         val during = e.update(0L, 10.1)
         assertNotNull(during.slideT)
-        assertEquals(LapseEngine.Format.DETAIL, during.prevFormat)
+        assertEquals(LapseEngine.Format.DETAIL2, during.prevFormat)
         assertTrue(during.animating)
 
         val after = e.update(0L, 10.0 + LapseEngine.SLIDE + 0.05)

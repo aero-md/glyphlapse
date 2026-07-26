@@ -11,7 +11,7 @@ import java.time.ZoneId
 class LapseEngine(private val zone: ZoneId = ZoneId.systemDefault()) {
 
     enum class Format {
-        DETAIL, DETAIL2, COMPACT, CYCLE, DAYS;
+        DETAIL2, COMPACT, CYCLE, DAYS;
 
         fun next(): Format = entries[(ordinal + 1) % entries.size]
     }
@@ -46,7 +46,7 @@ class LapseEngine(private val zone: ZoneId = ZoneId.systemDefault()) {
 
     var refMillis: Long = defaultRef(zone)
         private set
-    var format: Format = Format.DETAIL
+    var format: Format = Format.DETAIL2
         private set
     var secondsMode: SecondsMode = SecondsMode.RING
 
@@ -122,5 +122,10 @@ class LapseEngine(private val zone: ZoneId = ZoneId.systemDefault()) {
         /** Défaut : 1ᵉʳ janvier de l'année courante, 00:00 locale (mode depuis). */
         fun defaultRef(zone: ZoneId): Long =
             LocalDate.now(zone).withDayOfYear(1).atStartOfDay(zone).toInstant().toEpochMilli()
+
+        /** 31 décembre de l'année courante, 23:59 locale (mode jusqu'à). */
+        fun endOfYearRef(zone: ZoneId): Long =
+            LocalDate.now(zone).withMonth(12).withDayOfMonth(31)
+                .atTime(23, 59).atZone(zone).toInstant().toEpochMilli()
     }
 }

@@ -27,7 +27,7 @@ class LapseRendererTest {
 
     private fun snap(
         d: TimeBreakdown.Diff,
-        format: LapseEngine.Format = LapseEngine.Format.DETAIL,
+        format: LapseEngine.Format = LapseEngine.Format.DETAIL2,
         secondsMode: LapseEngine.SecondsMode = LapseEngine.SecondsMode.RING,
     ) = LapseEngine.Snapshot(
         diff = d, format = format, prevFormat = null, slideT = null,
@@ -134,7 +134,7 @@ class LapseRendererTest {
     @Test
     fun `arrivee - flash initial plein disque`() {
         val s = LapseEngine.Snapshot(
-            diff = fullDiff, format = LapseEngine.Format.DETAIL, prevFormat = null,
+            diff = fullDiff, format = LapseEngine.Format.DETAIL2, prevFormat = null,
             slideT = null, secondsMode = LapseEngine.SecondsMode.RING,
             arrivalT = 0.01, t = 1.0,
         )
@@ -147,7 +147,7 @@ class LapseRendererTest {
     fun `slide - transition melange ancien et nouveau format`() {
         val s = LapseEngine.Snapshot(
             diff = fullDiff, format = LapseEngine.Format.DAYS,
-            prevFormat = LapseEngine.Format.DETAIL,
+            prevFormat = LapseEngine.Format.DETAIL2,
             slideT = LapseEngine.SLIDE / 2, secondsMode = LapseEngine.SecondsMode.RING,
             arrivalT = null, t = 1.0,
         )

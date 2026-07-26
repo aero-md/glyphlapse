@@ -177,15 +177,6 @@ class LapseRenderer {
             return
         }
         when (fmt) {
-            LapseEngine.Format.DETAIL -> {
-                // Granularité complète, police selon le nombre de lignes
-                when {
-                    u.size <= 2 -> linesLayout(g, u.map { "${it.value}${it.label5}" }, Fonts.F5, 1f)
-                    u.size <= 4 -> linesLayout(g, u.map { "${it.value}${it.inline}" }, Fonts.F3, 1f)
-                    else -> linesLayout(g, u.map { "${it.value}${it.inline}" }, Fonts.F4, 1f)
-                }
-            }
-
             LapseEngine.Format.DETAIL2 -> {
                 // Appariement : 2 unités par ligne si besoin, 3×5 partout
                 fun s(x: UnitEntry) = "${x.value}${x.inline}"
@@ -211,16 +202,18 @@ class LapseRenderer {
                 val cur = u[idx]
                 val prev = u[(idx + n - 1) % n]
 
-                fun page(unit: UnitEntry, dx: Int) {
+                // Défilement vertical (vers le haut) : le suivant monte depuis le bas,
+                // le précédent sort par le haut — distinct du slide horizontal de lapse.
+                fun page(unit: UnitEntry, dy: Int) {
                     val s = unit.value.toString()
                     drawText(
                         g, Fonts.F5, s,
-                        ((Disc.SIZE - Fonts.F5.textWidth(s)) / 2.0).roundToInt() + dx, 4, 1f,
+                        ((Disc.SIZE - Fonts.F5.textWidth(s)) / 2.0).roundToInt(), 4 + dy, 1f,
                     )
                     drawText(
                         g, Fonts.F3, unit.cycleLabel,
-                        ((Disc.SIZE - Fonts.F3.textWidth(unit.cycleLabel)) / 2.0).roundToInt() + dx,
-                        15, 0.55f,
+                        ((Disc.SIZE - Fonts.F3.textWidth(unit.cycleLabel)) / 2.0).roundToInt(),
+                        15 + dy, 0.55f,
                     )
                 }
                 if (sl < 1 && n > 1) page(prev, (-e * Disc.SIZE).roundToInt())

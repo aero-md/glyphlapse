@@ -54,12 +54,12 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -100,7 +100,6 @@ private val SEL_LINE = Color(0x33FFFFFF)
 private val MENU_BG = Color(0xFF1D1D21)
 
 private val FORMAT_LABELS = mapOf(
-    LapseEngine.Format.DETAIL to "Détail",
     LapseEngine.Format.DETAIL2 to "Dense",
     LapseEngine.Format.COMPACT to "Compact",
     LapseEngine.Format.CYCLE to "Cycle",
@@ -121,29 +120,22 @@ private fun ConfigScreen() {
     val engine = remember { LapseEngine(zone) }
     val renderer = remember { LapseRenderer() }
 
-    var refMillis by remember {
-        mutableStateOf(prefs.getLong(Config.KEY_REF, LapseEngine.defaultRef(zone)))
+    // Un lapse par onglet ; l'onglet sélectionné est aussi le lapse actif (Glyph).
+    var lapses by remember {
+        mutableStateOf((0 until Config.LAPSE_COUNT).map { Config.readLapse(prefs, it, zone) })
     }
-    var format by remember {
-        mutableStateOf(
-            runCatching {
-                LapseEngine.Format.valueOf(prefs.getString(Config.KEY_FORMAT, null) ?: "")
-            }.getOrDefault(LapseEngine.Format.DETAIL)
-        )
-    }
-    var secondsMode by remember {
-        mutableStateOf(
-            runCatching {
-                LapseEngine.SecondsMode.valueOf(prefs.getString(Config.KEY_SECONDS, null) ?: "")
-            }.getOrDefault(LapseEngine.SecondsMode.RING)
-        )
-    }
+    var selectedTab by remember { mutableStateOf(Config.activeIndex(prefs)) }
+    val current = lapses[selectedTab]
+    val refMillis = current.ref
+    val format = current.format
+    val secondsMode = current.seconds
+
     var frame by remember { mutableStateOf(IntArray(25 * 25)) }
     var diff by remember { mutableStateOf<TimeBreakdown.Diff?>(null) }
     var showDate by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
 
-    // Dates favorites (usage app) : liste persistée, carte collapsible.
+    // Dates favorites : liste persistée, commune à tous les lapse.
     var savedDates by remember { mutableStateOf(Config.savedDates(prefs)) }
     var savedExpanded by remember { mutableStateOf(true) }
     var showAddDate by remember { mutableStateOf(false) }
@@ -152,12 +144,14 @@ private fun ConfigScreen() {
 
     fun now() = System.nanoTime() / 1e9
 
-    fun save() {
-        prefs.edit()
-            .putLong(Config.KEY_REF, refMillis)
-            .putString(Config.KEY_FORMAT, format.name)
-            .putString(Config.KEY_SECONDS, secondsMode.name)
-            .apply()
+    fun updateCurrent(cfg: Config.LapseConfig) {
+        lapses = lapses.toMutableList().also { it[selectedTab] = cfg }
+        Config.writeLapse(prefs, selectedTab, cfg)
+    }
+
+    fun selectTab(i: Int) {
+        selectedTab = i
+        Config.setActiveIndex(prefs, i) // le toy bascule (avec slide) sur ce lapse
     }
 
     fun persistSaved(list: List<Long>) {
@@ -167,9 +161,10 @@ private fun ConfigScreen() {
 
     LaunchedEffect(Unit) {
         while (true) {
-            if (engine.refMillis != refMillis) engine.setRef(refMillis)
-            if (engine.format != format) engine.setFormat(format, now())
-            engine.secondsMode = secondsMode
+            val cur = lapses[selectedTab]
+            if (engine.refMillis != cur.ref) engine.setRef(cur.ref)
+            if (engine.format != cur.format) engine.setFormatQuiet(cur.format)
+            engine.secondsMode = cur.seconds
             engine.drainEvents()
             val snap = engine.update(System.currentTimeMillis(), now())
             frame = renderer.render(snap)
@@ -187,10 +182,43 @@ private fun ConfigScreen() {
             .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        LapseRail(selectedTab, lapses) { selectTab(it) }
+        Spacer(Modifier.height(14.dp))
+
         MatrixPreview(frame)
         Spacer(Modifier.height(10.dp))
         DiffReadout(refMillis, diff, zone)
         Spacer(Modifier.height(24.dp))
+
+        // --- Activation (lapse 2 et 3 seulement ; le lapse 1 est toujours actif) ---
+        if (selectedTab != 0) {
+            SettingCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Activer ce lapse",
+                            color = LABEL,
+                            fontSize = 17.sp,
+                            fontFamily = FontFamily.Serif,
+                        )
+                        Text(
+                            "Inclus dans la rotation (appui long)",
+                            color = MUTED,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                        )
+                    }
+                    SquareSwitch(current.enabled) {
+                        updateCurrent(current.copy(enabled = !current.enabled))
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
 
         // --- Carte Date et heure ---
         val ldt = LocalDateTime.ofInstant(Instant.ofEpochMilli(refMillis), zone)
@@ -246,13 +274,13 @@ private fun ConfigScreen() {
                         millis = millis,
                         zone = zone,
                         applied = millis == refMillis,
-                        onApply = { refMillis = millis; save() },
+                        onApply = { updateCurrent(current.copy(ref = millis)) },
                         onDelete = { persistSaved(savedDates - millis) },
                     )
                     Spacer(Modifier.height(10.dp))
                 }
                 if (savedDates.size < Config.SAVED_MAX) {
-                    AddDateButton { addDraftMillis = refMillis; showAddDate = true }
+                    AddDateButton { addDraftMillis = System.currentTimeMillis(); showAddDate = true }
                 }
             }
         }
@@ -265,7 +293,7 @@ private fun ConfigScreen() {
             SelectField(
                 options = SECONDS_LABELS,
                 selected = secondsMode,
-            ) { secondsMode = it; save() }
+            ) { updateCurrent(current.copy(seconds = it)) }
 
             Spacer(Modifier.height(18.dp))
 
@@ -273,17 +301,12 @@ private fun ConfigScreen() {
             SelectField(
                 options = LapseEngine.Format.entries.map { it to (FORMAT_LABELS[it] ?: it.name) },
                 selected = format,
-            ) { format = it; save() }
+            ) { updateCurrent(current.copy(format = it)) }
         }
 
-        Spacer(Modifier.height(22.dp))
-        Text(
-            "Appui long sur le Glyph Button : format suivant.",
-            color = MUTED,
-            fontSize = 11.sp,
-            fontFamily = FontFamily.Monospace,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        // Respiration en bas : la dernière carte peut scroller sans rester
+        // collée au bord de l'écran.
+        Spacer(Modifier.height(48.dp))
     }
 
     if (showDate) {
@@ -299,9 +322,12 @@ private fun ConfigScreen() {
                     state.selectedDateMillis?.let { utc ->
                         val date = Instant.ofEpochMilli(utc)
                             .atZone(ZoneId.of("UTC")).toLocalDate()
-                        refMillis = date.atTime(ldt.toLocalTime()).atZone(zone)
-                            .toInstant().toEpochMilli()
-                        save()
+                        updateCurrent(
+                            current.copy(
+                                ref = date.atTime(ldt.toLocalTime()).atZone(zone)
+                                    .toInstant().toEpochMilli()
+                            )
+                        )
                     }
                     showDate = false
                 }) { Text("OK") }
@@ -323,10 +349,12 @@ private fun ConfigScreen() {
             onDismissRequest = { showTime = false },
             confirmButton = {
                 TextButton(onClick = {
-                    refMillis = ldt.toLocalDate()
-                        .atTime(state.hour, state.minute)
-                        .atZone(zone).toInstant().toEpochMilli()
-                    save()
+                    updateCurrent(
+                        current.copy(
+                            ref = ldt.toLocalDate().atTime(state.hour, state.minute)
+                                .atZone(zone).toInstant().toEpochMilli()
+                        )
+                    )
                     showTime = false
                 }) { Text("OK") }
             },
@@ -394,6 +422,100 @@ private fun ConfigScreen() {
                     TimePicker(state)
                 }
             },
+        )
+    }
+}
+
+/**
+ * Sélecteur de lapse : 3 sabliers filaires (deux triangles vides) posés sur une
+ * ligne de points, neck aligné sur la ligne. L'actif est rouge, les autres blancs.
+ * Chiffres romains I/II/III au-dessus. Un point retiré de chaque côté des sabliers.
+ */
+@Composable
+private fun LapseRail(
+    selected: Int,
+    lapses: List<Config.LapseConfig>,
+    onSelect: (Int) -> Unit,
+) {
+    val rail = 60.dp
+    val slot = 18.dp
+    // grille : points ('d'), sabliers ('h'), respiration ('') autour des sabliers
+    val pattern = listOf(
+        "d", "d", "", "h", "", "d", "d", "d", "", "h", "", "d", "d", "d", "", "h", "", "d", "d",
+    )
+    val roman = listOf("I", "II", "III")
+    var hg = 0
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        pattern.forEach { type ->
+            when (type) {
+                "d" -> Box(
+                    Modifier.width(slot).height(rail),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(Modifier.size(3.dp).clip(CircleShape).background(MUTED))
+                }
+
+                "h" -> {
+                    val i = hg++
+                    val color = if (i == selected) ACCENT else TXT
+                    Box(
+                        modifier = Modifier
+                            .width(slot)
+                            .height(rail)
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { onSelect(i) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Canvas(Modifier.size(width = 15.dp, height = 28.dp)) {
+                            val w = size.width
+                            val h = size.height
+                            val mid = h / 2f
+                            val p = Path().apply {
+                                moveTo(0f, 0f); lineTo(w, 0f); lineTo(w / 2f, mid); close()
+                                moveTo(0f, h); lineTo(w, h); lineTo(w / 2f, mid); close()
+                            }
+                            drawPath(
+                                p, color,
+                                style = Stroke(width = 1.7.dp.toPx(), join = StrokeJoin.Round),
+                            )
+                        }
+                        Text(
+                            roman[i],
+                            color = color,
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Serif,
+                            modifier = Modifier.align(Alignment.TopCenter),
+                        )
+                    }
+                }
+
+                else -> Spacer(Modifier.width(slot))
+            }
+        }
+    }
+}
+
+/** Interrupteur carré/rectangulaire (angles droits), rouge = activé. */
+@Composable
+private fun SquareSwitch(checked: Boolean, onToggle: () -> Unit) {
+    val pad = 3.dp
+    Box(
+        modifier = Modifier
+            .size(width = 52.dp, height = 28.dp)
+            .background(if (checked) ACCENT else GREY_BTN)
+            .border(1.dp, if (checked) ACCENT else SEL_LINE)
+            .clickable(onClick = onToggle),
+    ) {
+        Box(
+            modifier = Modifier
+                .align(if (checked) Alignment.CenterEnd else Alignment.CenterStart)
+                .padding(pad)
+                .size(22.dp)
+                .background(if (checked) Color.White else MUTED),
         )
     }
 }
@@ -545,13 +667,12 @@ private fun SavedDateRow(
                 .clickable(onClick = onDelete),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                "✕",
-                color = MUTED,
-                fontSize = 16.sp,
-                lineHeight = 16.sp,
-                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)),
-            )
+            Canvas(Modifier.size(10.5.dp)) {
+                val s = size.minDimension
+                val sw = 1.7.dp.toPx()
+                drawLine(MUTED, Offset(0f, 0f), Offset(s, s), sw, StrokeCap.Round)
+                drawLine(MUTED, Offset(s, 0f), Offset(0f, s), sw, StrokeCap.Round)
+            }
         }
     }
 }
