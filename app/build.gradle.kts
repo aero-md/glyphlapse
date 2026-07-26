@@ -40,6 +40,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Package distinct : cohabite avec l'APK de prod signé (aucun conflit
+            // de signature), deux icônes et deux toys Glyph séparés.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
