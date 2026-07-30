@@ -75,7 +75,7 @@ avec sa date de référence, son format et son animation des secondes.
 | Lapse II et III | désactivés par défaut, à activer pour entrer dans la rotation |
 | Référence par défaut | début d'année pour I et II, 31 décembre 23:59 pour III (donc en « jusqu'à ») |
 | Format par défaut | Dense |
-| Animation par défaut | Anneau |
+| Animation par défaut | Anneau (côté toy) — la préview ouvre le **lapse I sur le sablier** pour le donner à voir d'entrée |
 
 L'onglet sélectionné est aussi le lapse **affiché**, comme dans l'app de
 réglages où `selectTab` écrit `active_lapse` et fait basculer le toy.

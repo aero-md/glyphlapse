@@ -173,8 +173,8 @@
     <div class="card">
       <h2>Secondes — minute en cours</h2>
       <div class="row" id="secmodes">
-        <button data-s="0" class="on">Anneau</button>
-        <button data-s="1">Sablier</button>
+        <button data-s="0">Anneau</button>
+        <button data-s="1" class="on">Sablier</button>
       </div>
       <p class="hint">Anneau : arc périphérique, horaire (depuis) ou anti-horaire
       (jusqu'à). Sablier : le disque devient la moitié <b>basse</b> d'un sablier
@@ -668,13 +668,15 @@ document.getElementById("enable").addEventListener("click",()=>{
 })();
 
 /* défauts miroir de Config.defaultRef : début d'année pour I et II,
-   31 décembre 23:59 pour III (donc en mode « jusqu'à ») */
+   31 décembre 23:59 pour III (donc en mode « jusqu'à »).
+   Seule entorse : le lapse I ouvre sur le sablier pour le donner à voir
+   d'entrée — côté toy le défaut reste l'anneau (SecondsMode.RING). */
 (function(){
   const y=new Date().getFullYear();
   const startOfYear=new Date(y,0,1).getTime();
   const endOfYear=new Date(y,11,31,23,59).getTime();
   for(let i=0;i<LAPSE_COUNT;i++)
-    lapses.push({ref:i===2?endOfYear:startOfYear,format:0,sec:0,enabled:i===0});
+    lapses.push({ref:i===2?endOfYear:startOfYear,format:0,sec:i===0?1:0,enabled:i===0});
   const L=lapses[0];
   refMs=L.ref; format=L.format; secMode=L.sec;
   syncControls();
