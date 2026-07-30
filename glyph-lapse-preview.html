@@ -104,8 +104,8 @@
 <header>
   <canvas id="title" width="340" height="34" aria-label="GLYPHLAPSE"></canvas>
   <p class="tagline">Glyph Toy pour Nothing Phone (3) — temps écoulé <b>depuis</b> une date,
-  ou restant <b>jusqu'à</b> elle. Préview de référence : mêmes polices, mêmes règles,
-  même anneau des secondes que le toy Kotlin.</p>
+  ou restant <b>jusqu'à</b> elle, sur <b>3 lapse</b> indépendants. Préview de référence :
+  mêmes polices, mêmes règles, même anneau des secondes que le toy Kotlin.</p>
 </header>
 
 <main>
@@ -125,6 +125,22 @@
 
   <section class="rack">
     <div class="card">
+      <h2>Lapse</h2>
+      <div class="row" id="lapses">
+        <button data-l="0" class="on">I</button>
+        <button data-l="1">II</button>
+        <button data-l="2">III</button>
+      </div>
+      <div class="row" style="margin-top:.6rem">
+        <button id="enable" hidden>Désactivé</button>
+      </div>
+      <p class="hint">3 lapse indépendants : chacun sa date, son format et son
+      animation. Le <b>lapse I</b> est toujours activé ; II et III entrent dans
+      la rotation une fois activés. L'onglet sélectionné est aussi le lapse
+      affiché sur la Glyph, comme dans l'app de réglages.</p>
+    </div>
+
+    <div class="card">
       <h2>Date de référence</h2>
       <input type="datetime-local" id="ref" step="1">
       <div class="row" style="margin-top:.6rem">
@@ -141,17 +157,17 @@
     <div class="card">
       <h2>Format d'affichage</h2>
       <div class="row" id="formats">
-        <button data-f="0" class="on">Détail</button>
-        <button data-f="1">Détail 2</button>
-        <button data-f="2">Compact</button>
-        <button data-f="3">Cycle</button>
-        <button data-f="4">Jours</button>
+        <button data-f="0" class="on">Dense</button>
+        <button data-f="1">Compact</button>
+        <button data-f="2">Cycle</button>
+        <button data-f="3">Jours</button>
       </div>
-      <p class="hint">Détail : granularité complète — une ligne par unité pertinente,
-      jusqu'à 5 (années → minutes), police 3×4 à 5 lignes. <b>Détail 2</b> :
-      même granularité mais 2 unités par ligne quand nécessaire — années /
-      mois·jours / heures·minutes — police 3×5 partout. Minutes notées ′.
-      Les secondes vivent sur l'anneau (sauf diff &lt; 1 min).</p>
+      <p class="hint"><b>Dense</b> : granularité complète, 2 unités par ligne
+      quand nécessaire — années / mois·jours / heures·minutes — police 3×5
+      partout. <b>Compact</b> : les 2 unités les plus significatives en 5×7.
+      <b>Cycle</b> : une unité plein écran, défilement vertical toutes les 2 s.
+      <b>Jours</b> : total de jours (« J-42 » en compte à rebours).
+      Minutes notées ′. Les secondes vivent sur l'anneau (sauf diff &lt; 1 min).</p>
     </div>
 
     <div class="card">
@@ -170,8 +186,10 @@
       <h2>Glyph Button</h2>
       <p class="hint" style="margin-top:0">Le bouton est sur la photo, à sa place
       réelle au dos de l'appareil : <b>appui long</b> (450 ms) pour passer au
-      format suivant. Relâché trop tôt, rien ne se lance — un rappel s'affiche.
-      Appui court sur l'appareil = cycle des toys, géré par le système.</p>
+      <b>lapse activé suivant</b> — slide horizontal de 0,35 s, l'ancien sort
+      par la gauche, plus un tick haptique sur l'appareil. Avec un seul lapse
+      activé, le toy ne fait rien. Relâché trop tôt, rien ne se lance — un
+      rappel s'affiche. Appui court = cycle des toys, géré par le système.</p>
     </div>
   </section>
 </main>
@@ -234,17 +252,6 @@ const F5={h:7,g:{
  "S":["01111","10000","10000","01110","00001","00001","11110"],
  "-":["000","000","000","111","000","000","000"],
  "'":["1","1","1","0","0","0","0"]
-}};
-/* 3×4 ultra-compacte : uniquement pour le format Détail à 5 lignes */
-const F4={h:4,g:{
- "0":["111","101","101","111"],"1":["110","010","010","111"],
- "2":["111","001","010","111"],"3":["111","011","001","111"],
- "4":["101","111","001","001"],"5":["111","110","001","111"],
- "6":["100","111","101","111"],"7":["111","001","010","010"],
- "8":["111","111","101","111"],"9":["111","101","111","001"],
- "A":["010","101","111","101"],"J":["001","001","101","111"],
- "H":["101","111","101","101"],"M":["10001","11011","10101","10001"],
- "'":["1","1","0","0"]
 }};
 function chW(f,c){return f.g[c]?f.g[c][0].length:0}
 /* " " = séparateur de groupe : 2 px de blanc entre deux unités d'une même ligne */
@@ -334,28 +341,26 @@ function renderContent(g,fmt,d,t){
   if(d.years===0&&d.months===0&&d.days===0&&d.hours===0&&d.minutes===0){
     drawCentered(g,F5,d.seconds+"S",12,1); return;
   }
-  if(fmt===0){ /* Détail — granularité complète, police selon le nombre de lignes */
-    if(u.length<=2)      linesLayout(g,u.map(x=>x[3]+x[1]),F5,1);
-    else if(u.length<=4) linesLayout(g,u.map(x=>x[3]+x[0]),F3,1);
-    else                 linesLayout(g,u.map(x=>x[3]+x[0]),F4,1);
-  }else if(fmt===1){ /* Détail 2 — appariement : 2 unités par ligne si besoin, 3×5 partout */
+  if(fmt===0){ /* Dense — granularité complète, 2 unités par ligne si besoin, 3×5 partout */
     const s=x=>x[3]+x[0];
     let rows;
     if(u.length===5)      rows=[s(u[0]), s(u[1])+" "+s(u[2]), s(u[3])+" "+s(u[4])];
     else if(u.length===4) rows=[s(u[0]), s(u[1])+" "+s(u[2]), s(u[3])];
     else                  rows=u.map(s);
     linesLayout(g,rows,u.length<=2?F5:F3,1);
-  }else if(fmt===2){ /* Compact */
+  }else if(fmt===1){ /* Compact */
     linesLayout(g,u.slice(0,2).map(x=>x[3]+x[1]),F5,1);
-  }else if(fmt===3){ /* Cycle */
+  }else if(fmt===2){ /* Cycle */
     const per=2.0, n=u.length, tt=t%(per*n);
     const idx=Math.floor(tt/per), ph=tt-idx*per;
     const sl=Math.min(1,ph/0.3), e=1-Math.pow(1-sl,3);
     const cur=u[idx], prev=u[(idx+n-1)%n];
-    const page=(unit,dx)=>{
+    /* défilement vertical (vers le haut) : le suivant monte depuis le bas, le
+       précédent sort par le haut — distinct du slide horizontal de lapse */
+    const page=(unit,dy)=>{
       const s=String(unit[3]);
-      drawText(g,F5,s,Math.round((SIZE-textW(F5,s))/2)+dx,4,1);
-      drawText(g,F3,unit[2],Math.round((SIZE-textW(F3,unit[2]))/2)+dx,15,0.55);
+      drawText(g,F5,s,Math.round((SIZE-textW(F5,s))/2),4+dy,1);
+      drawText(g,F3,unit[2],Math.round((SIZE-textW(F3,unit[2]))/2),15+dy,0.55);
     };
     if(sl<1&&n>1) page(prev,Math.round(-e*SIZE));
     page(cur,n>1?Math.round((1-e)*SIZE):0);
@@ -434,8 +439,14 @@ function renderArrival(g,t){
 
 /* ---------- état & boucle ---------- */
 const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* Multi-lapse : 3 lapse indépendants (date, format, animation, activation).
+   Le lapse I est toujours activé ; II et III entrent dans la rotation de
+   l'appui long une fois activés. Miroir de Config.kt / LapseToyService.kt. */
+const LAPSE_COUNT=3, FMT_SLIDE=0.3, LAPSE_SLIDE=0.35;
+const lapses=[], ROMAN=["I","II","III"];
+let active=0;
 let refMs, format=0, secMode=0, lastDir=null, arrival=null;
-let slide=null; /* {from:Float32Array, start} */
+let slide=null; /* {from:Float32Array, start, dur} */
 const t0=performance.now()/1000;
 
 function snapshot(){
@@ -446,10 +457,48 @@ function snapshot(){
 }
 function setFormat(f){
   if(f===format)return;
-  if(!reduced) slide={from:snapshot(),start:performance.now()/1000};
-  format=f;
+  if(!reduced) slide={from:snapshot(),start:performance.now()/1000,dur:FMT_SLIDE};
+  format=f; lapses[active].format=f;
   document.querySelectorAll("#formats button").forEach(b=>
     b.classList.toggle("on",+b.dataset.f===format));
+}
+function setSecMode(s){
+  secMode=s; lapses[active].sec=s;
+  document.querySelectorAll("#secmodes button").forEach(b=>
+    b.classList.toggle("on",+b.dataset.s===secMode));
+}
+/* Prochain lapse activé après l'actif (rotation), ou l'actif si seul activé. */
+function nextEnabledIndex(){
+  for(let k=1;k<LAPSE_COUNT;k++){
+    const c=(active+k)%LAPSE_COUNT;
+    if(lapses[c].enabled) return c;
+  }
+  return active;
+}
+/* Bascule sur un lapse : slide horizontal, l'ancien sort vers la gauche. */
+function switchLapse(i){
+  if(i===active) return;
+  if(!reduced) slide={from:snapshot(),start:performance.now()/1000,dur:LAPSE_SLIDE};
+  active=i;
+  const L=lapses[i];
+  refMs=L.ref; format=L.format; secMode=L.sec;
+  lastDir=null; arrival=null;
+  syncControls();
+}
+/* Reflète le lapse actif dans les contrôles (l'onglet sélectionné EST l'actif,
+   comme dans l'app de réglages : sélectionner un onglet bascule le toy). */
+function syncControls(){
+  writeInput(refMs);
+  document.querySelectorAll("#lapses button").forEach(b=>
+    b.classList.toggle("on",+b.dataset.l===active));
+  document.querySelectorAll("#formats button").forEach(b=>
+    b.classList.toggle("on",+b.dataset.f===format));
+  document.querySelectorAll("#secmodes button").forEach(b=>
+    b.classList.toggle("on",+b.dataset.s===secMode));
+  const en=document.getElementById("enable");
+  en.hidden=active===0; /* le lapse I est toujours activé */
+  en.classList.toggle("on",lapses[active].enabled);
+  en.textContent=lapses[active].enabled?"Activé — dans la rotation":"Désactivé";
 }
 
 /* Rendu LED : une cellule = un nombre entier de pixels écran. Un canvas de
@@ -479,10 +528,11 @@ function paint(g){
 }
 
 const roDir=document.getElementById("ro-dir"), roTxt=document.getElementById("ro-txt");
-const FMT_NAMES=["Détail","Détail 2","Compact","Cycle","Jours"];
+const FMT_NAMES=["Dense","Compact","Cycle","Jours"];
 const UNIT_FR=[["an","ans"],["mois","mois"],["jour","jours"],["h","h"],["min","min"]];
 function updateReadout(d){
-  roDir.textContent=(d.dir==="since"?"Depuis":"Jusqu'au")+" · "+FMT_NAMES[format];
+  roDir.textContent="Lapse "+ROMAN[active]+" · "+(d.dir==="since"?"Depuis":"Jusqu'au")
+    +" · "+FMT_NAMES[format];
   const parts=[d.years,d.months,d.days,d.hours,d.minutes].map((v,i)=>
     v>0?v+" "+UNIT_FR[i][v>1?1:0]:null).filter(Boolean);
   parts.push(d.seconds+" s");
@@ -500,8 +550,8 @@ function frame(){
   renderContent(g,format,d,tNow-t0);
   renderSeconds(g,d,tNow);
 
-  if(slide){ /* slide horizontal ancien → nouveau format */
-    const u=Math.min(1,(tNow-slide.start)/0.3), e=1-Math.pow(1-u,3);
+  if(slide){ /* slide horizontal : ancien format ou ancien lapse sort par la gauche */
+    const u=Math.min(1,(tNow-slide.start)/slide.dur), e=1-Math.pow(1-u,3);
     if(u>=1) slide=null;
     else{
       const mix=new Float32Array(SIZE*SIZE), dx=Math.round(e*SIZE);
@@ -523,14 +573,17 @@ function frame(){
 
 /* ---------- contrôles ---------- */
 const input=document.getElementById("ref");
-function setRef(ms){
-  refMs=ms; lastDir=null; arrival=null;
+function writeInput(ms){
   const d=new Date(ms-new Date(ms).getTimezoneOffset()*60000);
   input.value=d.toISOString().slice(0,19);
 }
+function setRef(ms){
+  refMs=ms; lapses[active].ref=ms; lastDir=null; arrival=null;
+  writeInput(ms);
+}
 input.addEventListener("change",()=>{
   const v=new Date(input.value).getTime();
-  if(!isNaN(v)){refMs=v;lastDir=null;arrival=null;}
+  if(!isNaN(v)){refMs=v;lapses[active].ref=v;lastDir=null;arrival=null;}
 });
 document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>{
   const now=new Date();
@@ -549,34 +602,49 @@ document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click"
 document.querySelectorAll("#formats button").forEach(b=>
   b.addEventListener("click",()=>setFormat(+b.dataset.f)));
 document.querySelectorAll("#secmodes button").forEach(b=>
-  b.addEventListener("click",()=>{
-    secMode=+b.dataset.s;
-    document.querySelectorAll("#secmodes button").forEach(x=>
-      x.classList.toggle("on",+x.dataset.s===secMode));
-  }));
-/* appui long sur le bouton Glyph — relâché avant 450 ms, rien ne se lance et
-   on le dit, au lieu de laisser croire que le bouton ne répond pas */
+  b.addEventListener("click",()=>setSecMode(+b.dataset.s)));
+document.querySelectorAll("#lapses button").forEach(b=>
+  b.addEventListener("click",()=>switchLapse(+b.dataset.l)));
+document.getElementById("enable").addEventListener("click",()=>{
+  if(active===0) return; /* le lapse I ne se désactive pas */
+  lapses[active].enabled=!lapses[active].enabled;
+  syncControls();
+});
+
+/* appui long sur le bouton Glyph = lapse activé suivant. Relâché avant 450 ms,
+   rien ne se lance et on le dit, au lieu de laisser croire à une panne. */
 (function(){
   const btn=document.getElementById("longpress"), hint=document.getElementById("glyphhint");
   let pressT=null, hintT=null, down=false, fired=false;
+  const showHint=(msg)=>{
+    hint.textContent=msg;
+    hint.classList.add("on"); btn.classList.add("is-hint");
+    clearTimeout(hintT);
+    hintT=setTimeout(()=>{hint.classList.remove("on");btn.classList.remove("is-hint")},1900);
+  };
+  const longPress=()=>{
+    const next=nextEnabledIndex();
+    /* un seul lapse activé : le toy ne fait rien — on l'explique */
+    if(next===active) showHint("Un seul lapse activé");
+    else switchLapse(next);
+  };
   btn.addEventListener("pointerdown",()=>{
     down=true; fired=false;
     clearTimeout(hintT); hint.classList.remove("on"); btn.classList.remove("is-hint");
     btn.classList.add("is-pressed");
-    pressT=setTimeout(()=>{fired=true;setFormat((format+1)%5)},450);
+    pressT=setTimeout(()=>{fired=true;longPress()},450);
   });
   const end=()=>{
     if(!down)return;
     down=false; btn.classList.remove("is-pressed"); clearTimeout(pressT);
     if(fired)return;
-    hint.classList.add("on"); btn.classList.add("is-hint");
-    hintT=setTimeout(()=>{hint.classList.remove("on");btn.classList.remove("is-hint")},1900);
+    showHint("Appui long →");
   };
   btn.addEventListener("pointerup",end);
   btn.addEventListener("pointerleave",end);
-  /* clavier : pas de notion d'appui long, on cycle directement */
+  /* clavier : pas de notion d'appui long, on déclenche directement */
   btn.addEventListener("keydown",(e)=>{
-    if(e.key==="Enter"||e.key===" "){e.preventDefault();setFormat((format+1)%5)}
+    if(e.key==="Enter"||e.key===" "){e.preventDefault();longPress()}
   });
 })();
 
@@ -599,6 +667,17 @@ document.querySelectorAll("#secmodes button").forEach(b=>
   x.fillRect(cx*(dot+2),4*(dot+2)+2,dot,dot);
 })();
 
-setRef(new Date(new Date().getFullYear(),0,1).getTime());
+/* défauts miroir de Config.defaultRef : début d'année pour I et II,
+   31 décembre 23:59 pour III (donc en mode « jusqu'à ») */
+(function(){
+  const y=new Date().getFullYear();
+  const startOfYear=new Date(y,0,1).getTime();
+  const endOfYear=new Date(y,11,31,23,59).getTime();
+  for(let i=0;i<LAPSE_COUNT;i++)
+    lapses.push({ref:i===2?endOfYear:startOfYear,format:0,sec:0,enabled:i===0});
+  const L=lapses[0];
+  refMs=L.ref; format=L.format; secMode=L.sec;
+  syncControls();
+})();
 requestAnimationFrame(frame);
 </script>

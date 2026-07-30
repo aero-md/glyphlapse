@@ -63,6 +63,44 @@ Le téléphone mesure **576 × 747 px**, la matrice **150 px** de diamètre — 
 l'échelle réelle du composant sur un écran classique. `main` et `footer` sont
 passés à `max-width: 1040px` pour que le rack de contrôles tienne à côté.
 
+## Multi-lapse
+
+Miroir de `Config.kt` et `LapseToyService.kt` : **3 lapse indépendants**, chacun
+avec sa date de référence, son format et son animation des secondes.
+
+| Règle | Valeur |
+|---|---|
+| Nombre de lapse | 3 (`LAPSE_COUNT`), notés I / II / III |
+| Lapse I | toujours activé, non désactivable |
+| Lapse II et III | désactivés par défaut, à activer pour entrer dans la rotation |
+| Référence par défaut | début d'année pour I et II, 31 décembre 23:59 pour III (donc en « jusqu'à ») |
+| Format par défaut | Dense |
+| Animation par défaut | Anneau |
+
+L'onglet sélectionné est aussi le lapse **affiché**, comme dans l'app de
+réglages où `selectTab` écrit `active_lapse` et fait basculer le toy.
+
+`nextEnabledIndex()` reprend la rotation du service : on avance parmi les lapse
+activés, et si un seul l'est, la fonction renvoie l'actif — le toy ne fait
+alors rien. La préview affiche `UN SEUL LAPSE ACTIVÉ` dans ce cas, sinon
+l'absence de réaction passerait pour une panne.
+
+## Formats
+
+Quatre formats, alignés sur `LapseEngine.Format` :
+
+| Index | Nom | Rendu |
+|---:|---|---|
+| 0 | Dense (`DETAIL2`) | Granularité complète, 2 unités par ligne si besoin, police 3×5 |
+| 1 | Compact | Les 2 unités les plus significatives en 5×7 |
+| 2 | Cycle | Une unité plein écran, **défilement vertical** toutes les 2 s |
+| 3 | Jours | Total de jours, « J-42 » en compte à rebours |
+
+Le cycle défile verticalement — le slide horizontal est réservé au changement
+de lapse, les deux animations doivent rester distinguables. L'ancien format
+« Détail » (une ligne par unité, police 3×4 à 5 lignes) a été retiré du toy ;
+la police `F4` qu'il était seul à utiliser a disparu avec lui.
+
 ## Interaction
 
 Le bouton est un `<button>` transparent superposé au Glyph Button de la photo,
@@ -75,12 +113,27 @@ avec un glow jaune Nothing (variable CSS `--yellow: 255,229,0`) :
 | pressé (`.is-pressed`) | anneau plein, halo large, ombre interne |
 | rappel actif (`.is-hint`) | pulse à 0,7 s |
 
-Un appui de **450 ms** passe au format suivant. Relâché avant, ou pointeur
-sorti du bouton en cours d'appui, le rappel `APPUI LONG →` apparaît à gauche du
-bouton pendant 1,9 s. Les drapeaux `down` / `fired` distinguent les deux cas.
+Un appui de **450 ms** passe au **lapse activé suivant**. Relâché avant, ou
+pointeur sorti du bouton en cours d'appui, le rappel `APPUI LONG →` apparaît à
+gauche du bouton pendant 1,9 s. Les drapeaux `down` / `fired` distinguent les
+deux cas.
 
-Au clavier (`Enter` / `Espace`) le format change directement : il n'y a pas de
+Au clavier (`Enter` / `Espace`) la bascule se fait directement : il n'y a pas de
 notion d'appui long, et le bouton doit rester utilisable.
+
+## Slides
+
+Deux transitions horizontales, de durées distinctes comme dans le toy :
+
+| Transition | Durée | Source |
+|---|---:|---|
+| Changement de format | 0,30 s | `LapseEngine.SLIDE` |
+| Changement de lapse | 0,35 s | `LapseToyService.LAPSE_SLIDE` |
+
+Même compositing dans les deux cas : l'ancienne frame sort par la gauche, la
+nouvelle entre par la droite, easing `1 - (1-p)³`. L'objet `slide` porte sa
+propre durée (`{from, start, dur}`). Sur l'appareil, le changement de lapse
+s'accompagne d'un tick haptique.
 
 ## Fond
 
