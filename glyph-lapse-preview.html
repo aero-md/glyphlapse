@@ -31,6 +31,9 @@
   .phone{position:relative;width:576px;max-width:100%;aspect-ratio:704/913;
     filter:drop-shadow(0 26px 48px rgba(0,0,0,.65))}
   .phone img{position:absolute;inset:0;width:100%;height:100%;display:block;
+    /* hors du hit-test : sinon l'appui long sur le bouton, qui la recouvre,
+       ouvre le menu contextuel « enregistrer l'image » de Chrome Android */
+    pointer-events:none;-webkit-user-drag:none;user-select:none;
     /* fondu plutôt qu'un aplat superposé, sinon la trame de fond disparaîtrait */
     -webkit-mask-image:linear-gradient(to bottom,#000 86%,transparent 99%);
     mask-image:linear-gradient(to bottom,#000 86%,transparent 99%)}
@@ -45,7 +48,13 @@
   .glyphbtn{position:absolute;left:84.53%;top:74.82%;width:15.86%;aspect-ratio:1;
     transform:translate(-50%,-50%);border-radius:50%;border:none;padding:0;
     background:transparent;cursor:pointer;transition:transform .12s;
-    animation:glyphPulse 2.2s ease-in-out infinite}
+    animation:glyphPulse 2.2s ease-in-out infinite;
+    /* tactile : touch-action none pour que le navigateur ne prenne pas l'appui
+       pour un début de scroll, callout/sélection coupés pour qu'il ne le prenne
+       pas pour un appui long système */
+    touch-action:none;-webkit-touch-callout:none;
+    -webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent}
   @keyframes glyphPulse{
     0%,100%{box-shadow:0 0 0 1px rgba(var(--yellow),.55),0 0 12px 2px rgba(var(--yellow),.30),0 0 0 0 rgba(var(--yellow),.34)}
     50%    {box-shadow:0 0 0 2px rgba(var(--yellow),.95),0 0 26px 6px rgba(var(--yellow),.60),0 0 0 14px rgba(var(--yellow),0)}
@@ -624,6 +633,8 @@ document.getElementById("enable").addEventListener("click",()=>{
   };
   const longPress=()=>{
     const next=nextEnabledIndex();
+    /* tick haptique, comme le toy au changement de lapse */
+    if(navigator.vibrate) navigator.vibrate(12);
     /* un seul lapse activé : le toy ne fait rien — on l'explique */
     if(next===active) showHint("Un seul lapse activé");
     else switchLapse(next);
@@ -642,6 +653,16 @@ document.getElementById("enable").addEventListener("click",()=>{
   };
   btn.addEventListener("pointerup",end);
   btn.addEventListener("pointerleave",end);
+  /* le navigateur a repris le geste (scroll, appel entrant…) : on annule sans
+     rappel, l'utilisateur n'a rien fait de travers */
+  btn.addEventListener("pointercancel",()=>{
+    down=false; fired=false; btn.classList.remove("is-pressed"); clearTimeout(pressT);
+  });
+  /* filets tactiles : Chrome Android déclenche son appui long système avant que
+     le nôtre n'arrive à 450 ms. preventDefault sur touchstart le désamorce —
+     pointerdown a déjà été émis à ce stade, la logique ci-dessus est intacte. */
+  btn.addEventListener("touchstart",(e)=>e.preventDefault(),{passive:false});
+  btn.addEventListener("contextmenu",(e)=>e.preventDefault());
   /* clavier : pas de notion d'appui long, on déclenche directement */
   btn.addEventListener("keydown",(e)=>{
     if(e.key==="Enter"||e.key===" "){e.preventDefault();longPress()}

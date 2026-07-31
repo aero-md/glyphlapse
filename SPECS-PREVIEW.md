@@ -121,6 +121,26 @@ deux cas.
 Au clavier (`Enter` / `Espace`) la bascule se fait directement : il n'y a pas de
 notion d'appui long, et le bouton doit rester utilisable.
 
+### Tactile
+
+Sans précautions, l'appui long mobile déclenche l'appui long *système* — sur
+Chrome Android, le menu contextuel de l'image du dos, que le bouton recouvre.
+Quatre verrous, tous nécessaires :
+
+| Verrou | Rôle |
+|---|---|
+| `pointer-events: none` sur l'`<img>` | la photo sort du hit-test : plus de menu « enregistrer l'image » |
+| `touch-action: none` sur `.glyphbtn` | le navigateur ne prend pas l'appui pour un début de scroll et ne vole pas le geste |
+| `-webkit-touch-callout` + `user-select: none` | pas de callout iOS, pas de sélection de texte |
+| `preventDefault` sur `touchstart` (`{passive:false}`) et `contextmenu` | désamorce l'appui long système avant nos 450 ms |
+
+`pointerdown` est émis avant `touchstart`, la machine à états est donc intacte.
+`pointercancel` remet l'état à zéro **sans** afficher le rappel : le geste a été
+repris par le navigateur, l'utilisateur n'a rien fait de travers.
+
+Le changement de lapse s'accompagne d'un `navigator.vibrate(12)` là où c'est
+supporté — écho du tick haptique de `LapseToyService`.
+
 ## Slides
 
 Deux transitions horizontales, de durées distinctes comme dans le toy :
